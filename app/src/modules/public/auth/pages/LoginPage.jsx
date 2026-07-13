@@ -3,14 +3,6 @@ import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Lock, User, Mail, KeyRound, CheckCircle2 } from 'lucide-react'
 import AuthService from '@/modules/public/auth/services/AuthService'
 
-const ROLE_MAP = {
-  ADMIN: 'admin',
-  SUB_ADMIN: 'subadmin',
-  MANAGEMENT: 'gestor',
-  EMPLOYEE: 'empleado',
-  ATTENDANCE: 'atencion_cliente',
-}
-
 const GENERIC_ERROR = 'Ocurrió un error. Intenta nuevamente.'
 
 export function LoginPage({ onLogin }) {
@@ -47,10 +39,9 @@ export function LoginPage({ onLogin }) {
     }
 
     sessionStorage.setItem('token', result.token)
-    const role = ROLE_MAP[result.usuario?.role] || 'empleado'
 
     setLoginError('')
-    onLogin(role, result.usuario?.nombre)
+    onLogin(result.usuario?.role, result.usuario?.nombre)
   }
 
   // --- PASO 2: FORMULARIO DE SOLICITUD (USUARIO + CORREO) ---

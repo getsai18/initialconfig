@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { PublicRouter } from '@/routes/PublicRouter'
 import { AuthRouter } from '@/routes/AuthRouter'
+import { UnimplementedRoleScreen } from '@/routes/UnimplementedRoleScreen'
+
+const IMPLEMENTED_ROLES = ['ADMIN', 'SUB_ADMIN']
 
 export default function App() {
   const [role, setRole] = useState(null)
@@ -16,5 +19,9 @@ export default function App() {
 
   if (role === null) return <PublicRouter onLogin={handleLogin} />
 
-  return <AuthRouter onLogout={handleLogout} isSubAdmin={role === 'subadmin'} />
+  if (!IMPLEMENTED_ROLES.includes(role)) {
+    return <UnimplementedRoleScreen role={role} onLogout={handleLogout} />
+  }
+
+  return <AuthRouter onLogout={handleLogout} isSubAdmin={role === 'SUB_ADMIN'} />
 }

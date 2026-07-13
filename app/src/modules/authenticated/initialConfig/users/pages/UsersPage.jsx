@@ -5,6 +5,7 @@ import { Pagination } from '@/kernel/components/Pagination'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { normalizeText } from '@/kernel/utils/normalizeText'
 import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
+import { ROLE_LABELS as roleConfig } from '@/kernel/auth/roleLabels'
 import { useUsers } from '../hooks/useUsers'
 import { useAreas } from '../../areas/hooks/useAreas'
 
@@ -13,15 +14,6 @@ const PAGE_SIZE = 10
 const estadoConfig = {
   activo: { label: 'Activo', color: 'bg-green-100 text-green-700' },
   inactivo: { label: 'Inactivo', color: 'bg-gray-100 text-gray-600' },
-}
-
-// Configuración visual amigable para mostrar el Rol en la tabla
-const roleConfig = {
-  ADMIN: 'Administrador',
-  SUB_ADMIN: 'Subadministrador',
-  MANAGEMENT: 'Gestor de Órdenes',
-  EMPLOYEE: 'Empleado',
-  ATTENDANCE: 'Atención al Cliente'
 }
 
 export function UsersPage({ isSubAdmin }) {
