@@ -1,0 +1,100 @@
+package utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import utez.edu.mx.cpm.backend.kernel.exceptions.AppException;
+import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.TipoPrenda;
+import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.TipoPrendaRepository;
+import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.dto.TipoPrendaRequest;
+import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.dto.TipoPrendaResponse;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class TipoPrendaServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.service.TipoPrendaService {
+
+    private final TipoPrendaRepository tipoPrendaRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TipoPrendaResponse> findAll() {
+        return tipoPrendaRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TipoPrendaResponse findById(Long id) {
+        return toResponse(findEntity(id));
+    }
+
+    @Override
+    public TipoPrendaResponse create(TipoPrendaRequest request) {
+        String nombre = required(request.getNombre(), "El nombre de la prenda es requerido.");
+        if (tipoPrendaRepository.existsByNombreIgnoreCase(nombre)) {
+            throw new AppException(HttpStatus.CONFLICT, "Ya existe una prenda con ese nombre.");
+        }
+        TipoPrenda tipoPrenda = TipoPrenda.builder()
+                .nombre(nombre)
+                .categoria(required(request.getCategoria(), "La categoría es requerida."))
+                .icono(normalizeOptional(request.getIcono()))
+                .tallasDisponibles(normalizeOptional(request.getTallasDisponibles()))
+                .build();
+        return toResponse(tipoPrendaRepository.save(tipoPrenda));
+    }
+
+    @Override
+    public TipoPrendaResponse update(Long id, TipoPrendaRequest request) {
+        TipoPrenda tipoPrenda = findEntity(id);
+        String nombre = required(request.getNombre(), "El nombre de la prenda es requerido.");
+        boolean duplicate = tipoPrendaRepository.findAll().stream()
+                .anyMatch(existing -> existing.getNombre() != null && existing.getNombre().equalsIgnoreCase(nombre) && !existing.getId().equals(id));
+        if (duplicate) {
+            throw new AppException(HttpStatus.CONFLICT, "Ya existe una prenda con ese nombre.");
+        }
+        tipoPrenda.setNombre(nombre);
+        tipoPrenda.setCategoria(required(request.getCategoria(), "La categoría es requerida."));
+        tipoPrenda.setIcono(normalizeOptional(request.getIcono()));
+        tipoPrenda.setTallasDisponibles(normalizeOptional(request.getTallasDisponibles()));
+        return toResponse(tipoPrendaRepository.save(tipoPrenda));
+    }
+
+    @Override
+    public void delete(Long id) {
+        tipoPrendaRepository.delete(findEntity(id));
+    }
+
+    private TipoPrenda findEntity(Long id) {
+        if (id == null) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "El identificador de la prenda es requerido.");
+        }
+        return tipoPrendaRepository.findById(id)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Tipo de prenda no encontrado."));
+    }
+
+    private String required(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new AppException(HttpStatus.BAD_REQUEST, message);
+        }
+        return value.trim();
+    }
+
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private TipoPrendaResponse toResponse(TipoPrenda tipoPrenda) {
+        return TipoPrendaResponse.builder()
+                .id(tipoPrenda.getId())
+                .nombre(tipoPrenda.getNombre())
+                .categoria(tipoPrenda.getCategoria())
+                .icono(tipoPrenda.getIcono())
+                .tallasDisponibles(tipoPrenda.getTallasDisponibles())
+                .fechaCreacion(tipoPrenda.getFechaCreacion())
+                .build();
+    }
+}
+
