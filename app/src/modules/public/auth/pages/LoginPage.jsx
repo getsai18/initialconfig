@@ -1,13 +1,19 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Lock, User, Mail, KeyRound, CheckCircle2 } from 'lucide-react'
-import { useUsers } from '@/modules/authenticated/initialConfig/users/hooks/useUsers'
-import { useAreas } from '@/modules/authenticated/initialConfig/areas/hooks/useAreas'
+import AuthService from '@/modules/public/auth/services/AuthService'
+
+const ROLE_MAP = {
+  ADMIN: 'admin',
+  SUB_ADMIN: 'subadmin',
+  MANAGEMENT: 'gestor',
+  EMPLOYEE: 'empleado',
+  ATTENDANCE: 'atencion_cliente',
+}
+
+const GENERIC_ERROR = 'Ocurrió un error. Intenta nuevamente.'
 
 export function LoginPage({ onLogin }) {
-  const { users: usuarios, updateUser } = useUsers()
-  const { areas } = useAreas()
-
   // Estados de Vista Generales
   const [showPassword, setShowPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -15,7 +21,8 @@ export function LoginPage({ onLogin }) {
 
   // Control de flujo secuencial sin modular externo: 'login', 'request', 'verify', 'reset', 'success'
   const [recoveryStep, setRecoveryStep] = useState('login')
-  const [matchedUser, setMatchedUser] = useState(null)
+  const [recoveryUsuario, setRecoveryUsuario] = useState('')
+  const [resetToken, setResetToken] = useState('')
 
   // Errores y Mensajes de Feedback
   const [loginError, setLoginError] = useState('')
@@ -29,92 +36,70 @@ export function LoginPage({ onLogin }) {
   const nuevaPassword = watch('nuevaPassword')
 
   // --- PASO 1: SUBMIT DEL LOGIN TRADICIONAL ---
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const usuarioInput = data.usuario.toLowerCase().trim()
 
-    if (usuarioInput === 'admin' && data.password === '12345a') {
-      setLoginError('')
-      onLogin('admin', null)
+    const result = await AuthService.login(usuarioInput, data.password)
+
+    if (!result?.token) {
+      setLoginError(result?.message || 'Usuario o contraseña incorrectos.')
       return
     }
 
-    if (usuarioInput === 'subadmin' && data.password === '12345a') {
-      setLoginError('')
-      onLogin('subadmin', null)
-      return
-    }
-
-
-    const match = usuarios.find(u => u.usuario?.toLowerCase().trim() === usuarioInput)
-
-    if (!match || match.password !== data.password) {
-      setLoginError('Usuario o contraseña incorrectos.')
-      return
-    }
-
-    if (match.estado === 'inactivo') {
-      setLoginError('Este usuario ha sido desactivado por el administrador.')
-      return
-    }
-
-    const areaAsignada = areas.find(a => a.id === match.areaId)
-    const nombreArea = areaAsignada ? areaAsignada.nombre : ''
-
-    let role = 'empleado'
-    if (nombreArea === 'Gestión de Ordenes') {
-      role = 'gestor'
-    } else if (nombreArea === 'Atención a Clientes') {
-      role = 'atencion_cliente'
-    } else if (!match.areaId) {
-      role = 'admin'
-    }
+    sessionStorage.setItem('token', result.token)
+    const role = ROLE_MAP[result.usuario?.role] || 'empleado'
 
     setLoginError('')
-    onLogin(role, nombreArea)
+    onLogin(role, result.usuario?.nombre)
   }
 
   // --- PASO 2: FORMULARIO DE SOLICITUD (USUARIO + CORREO) ---
-  const handleRecoverySubmit = (data) => {
+  const handleRecoverySubmit = async (data) => {
     const userInput = data.recoveryUsuario.toLowerCase().trim()
     const emailInput = data.recoveryEmail.toLowerCase().trim()
 
-    const match = usuarios.find(
-      u => u.usuario?.toLowerCase().trim() === userInput &&
-           u.email?.toLowerCase().trim() === emailInput
-    )
+    const result = await AuthService.requestPasswordRecovery(userInput, emailInput)
 
-    if (!match) {
-      setRecoveryError('No se encontró ningún usuario que coincida con ese nombre y correo.')
+    if (!result?.sent) {
+      setRecoveryError(result?.message || 'No se encontró ningún usuario que coincida con ese nombre y correo.')
       return
     }
 
     setRecoveryError('')
-    setMatchedUser(match)
+    setRecoveryUsuario(userInput)
     // Saltamos al paso de Verificación de Código OTP
     setRecoveryStep('verify')
     reset()
   }
 
   // --- PASO 3: PANTALLA DE VERIFICACIÓN DE CÓDIGO ---
-  const handleVerifyCodeSubmit = (data) => {
-    // Código de validación estático simulado: 123456
-    if (data.otpCode === '123456') {
-      setVerificationError('')
-      setRecoveryStep('reset')
-      reset()
-    } else {
-      setVerificationError('El código ingresado es incorrecto o ha expirado. Prueba con 123456')
+  const handleVerifyCodeSubmit = async (data) => {
+    const result = await AuthService.verifyPasswordRecovery(recoveryUsuario, data.otpCode)
+
+    if (!result?.resetToken) {
+      setVerificationError(result?.message || 'El código ingresado es incorrecto o ha expirado.')
+      return
     }
+
+    setVerificationError('')
+    setResetToken(result.resetToken)
+    setRecoveryStep('reset')
+    reset()
   }
 
   // --- PASO 4: CAMBIO FORMAL DE CONTRASEÑA ---
-  const handleResetPasswordSubmit = (data) => {
-    if (!matchedUser) {
+  const handleResetPasswordSubmit = async (data) => {
+    if (!resetToken) {
       setResetPasswordError('Error en la sesión de recuperación. Reinicia el proceso.')
       return
     }
 
-    updateUser(matchedUser.id, { password: data.nuevaPassword })
+    const result = await AuthService.resetPassword(resetToken, data.nuevaPassword)
+
+    if (!result?.reset) {
+      setResetPasswordError(result?.message || GENERIC_ERROR)
+      return
+    }
 
     setResetPasswordError('')
     setRecoveryStep('success')
@@ -124,7 +109,8 @@ export function LoginPage({ onLogin }) {
   // Helper para limpiar estados al regresar por completo
   const resetToLogin = () => {
     setRecoveryStep('login')
-    setMatchedUser(null)
+    setRecoveryUsuario('')
+    setResetToken('')
     setLoginError('')
     setRecoveryError('')
     setVerificationError('')
@@ -213,13 +199,13 @@ export function LoginPage({ onLogin }) {
               </div>
               <h1 className="mb-2 text-xl font-bold">Verifica tu Identidad</h1>
               <p className="text-sm text-muted-foreground">
-                Hemos enviado un código de seguridad al correo vinculado de <strong>{matchedUser?.nombre}</strong>.
+                Hemos enviado un código de seguridad al correo vinculado a la cuenta <strong>{recoveryUsuario}</strong>.
               </p>
             </div>
 
             <form onSubmit={handleSubmit(handleVerifyCodeSubmit)} className="space-y-5">
               <div>
-                <label htmlFor="otpCode" className="block text-sm font-medium mb-1.5 text-center">Código de Validación (Prueba: 123456)</label>
+                <label htmlFor="otpCode" className="block text-sm font-medium mb-1.5 text-center">Código de Validación</label>
                 <input
                   id="otpCode"
                   {...register('otpCode', {
@@ -263,7 +249,7 @@ export function LoginPage({ onLogin }) {
             <div className="text-center mb-6">
               <h1 className="mb-2 text-xl font-bold">Nueva Contraseña</h1>
               <p className="text-sm text-muted-foreground">
-                Establece la nueva clave de acceso para el usuario <strong>{matchedUser?.usuario}</strong>.
+                Establece la nueva clave de acceso para el usuario <strong>{recoveryUsuario}</strong>.
               </p>
             </div>
 

@@ -32,7 +32,7 @@ public class Usuario {
     @Column(nullable = false, length = 30)
     private String nombre;
 
-    @Column(length = 30)
+    @Column(length = 255)
     private String email;
 
     /** Hash BCrypt. Nullable: el formulario de creación del frontend hoy no

@@ -17,6 +17,7 @@ const estadoConfig = {
 
 // Configuración visual amigable para mostrar el Rol en la tabla
 const roleConfig = {
+  ADMIN: 'Administrador',
   SUB_ADMIN: 'Subadministrador',
   MANAGEMENT: 'Gestor de Órdenes',
   EMPLOYEE: 'Empleado',

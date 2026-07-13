@@ -10,6 +10,7 @@ export default function App() {
   }
 
   function handleLogout() {
+    sessionStorage.removeItem('token')
     setRole(null)
   }
 

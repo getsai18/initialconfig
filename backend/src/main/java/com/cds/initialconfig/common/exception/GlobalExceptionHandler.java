@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mail.MailException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,6 +29,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), null);
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiError> handleAuth(AuthException ex) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), null);
+    }
+
+    @ExceptionHandler(MailException.class)
+    public ResponseEntity<ApiError> handleMail(MailException ex) {
+        log.error("Error al enviar correo", ex);
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "No se pudo enviar el correo de verificación. Intenta más tarde.", null);
     }
 
     /** Spring 6.2+ lanza esto para cualquier ruta sin handler (en vez de un 404
