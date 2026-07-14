@@ -23,6 +23,8 @@ export function useUsers() {
     fetchUsers();
   }, [fetchUsers]);
 
+
+
   async function createUser(payload) {
     const nuevo = {
       id: Date.now(),
@@ -35,21 +37,28 @@ export function useUsers() {
       estado: 'activo',
       fechaCreacion: new Date().toISOString().split('T')[0],
     };
-    setUsers((prev) => [...prev, nuevo]);
-    try {
-      await UsersService.create(nuevo);
-    } catch (e) {
-      console.warn('UsersService.create', e);
+
+    const res = await UsersService.create(nuevo);
+    if (!res || res.error || (res.status && res.status >= 400)) {
+      throw new Error(res?.message || 'El usuario o correo electrónico ya existe.');
     }
-    return nuevo;
+
+    setUsers((prev) => [...prev, res]);
+    return res;
   }
 
   async function updateUser(id, payload) {
+    const originalUsers = [...users];
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...payload } : u)));
     try {
-      await UsersService.update(id, payload);
+      const res = await UsersService.update(id, payload);
+      if (!res || res.error || (res.status && res.status >= 400)) {
+        throw new Error(res?.message || 'Error al actualizar el usuario');
+      }
     } catch (e) {
       console.warn('UsersService.update', e);
+      setUsers(originalUsers);
+      throw e;
     }
   }
 

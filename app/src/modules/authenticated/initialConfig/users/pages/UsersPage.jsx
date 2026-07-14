@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Search, MonitorSmartphone } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, MonitorSmartphone, Info } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Pagination } from '@/kernel/components/Pagination'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
@@ -97,31 +97,39 @@ export function UsersPage({ isSubAdmin }) {
     !usuarios.some(u => u.areaId === a.id && u.id !== editTarget?.id)
   )
 
+  const [submitError, setSubmitError] = useState('')
+
   function openCreate() {
     setEditTarget(null)
+    setSubmitError('')
     reset({ usuario: '', nombre: '', email: '', role: '', areaId: '', password: '', estado: 'activo' })
     setModalOpen(true)
   }
 
   function openEdit(u) {
     setEditTarget(u)
+    setSubmitError('')
     reset({ usuario: u.usuario ?? '', nombre: u.nombre, email: u.email, role: u.role ?? '', areaId: u.areaId ?? '', estado: u.estado })
     setModalOpen(true)
   }
 
-  function onSubmit(data) {
+  async function onSubmit(data) {
     // Permitimos que guarde el areaId asignado para cualquier rol (MANAGEMENT, ATTENDANCE o EMPLOYEE)
     const areaId = data.areaId !== '' ? Number(data.areaId) : null
+    setSubmitError('')
 
-    if (editTarget) {
-      updateUser(editTarget.id, { ...data, areaId })
-      setModalOpen(false)
-      setEditSuccessModal(data)
-    } else {
-      createUser({ ...data, areaId }).then((nuevo) => {
+    try {
+      if (editTarget) {
+        await updateUser(editTarget.id, { ...data, areaId })
+        setModalOpen(false)
+        setEditSuccessModal(data)
+      } else {
+        const nuevo = await createUser({ ...data, areaId })
         setSuccessModal(nuevo)
-      })
-      setModalOpen(false)
+        setModalOpen(false)
+      }
+    } catch (e) {
+      setSubmitError(e.message || 'Ocurrió un error al procesar el usuario.')
     }
   }
 
@@ -241,8 +249,13 @@ export function UsersPage({ isSubAdmin }) {
               </div>
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {submitError && (
+                <div className="p-3 rounded-lg bg-red-100 text-red-700 text-xs border border-red-200 font-medium">
+                  {submitError}
+                </div>
+              )}
               <div>
-                  <label className="block text-sm mb-1">Usuario</label>
+                <label className="block text-sm mb-1">Usuario</label>
                    <input
                     maxLength={30}
                     {...register('usuario', {
@@ -285,6 +298,14 @@ export function UsersPage({ isSubAdmin }) {
               className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
+            {!editTarget && (
+              <div className="flex items-start gap-2 mt-3 p-3 rounded-md bg-primary/10 border border-primary/20 text-primary">
+                <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed">
+                  Al crear el usuario, el sistema autogenerará una contraseña segura de forma automática y la enviará a este correo electrónico.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Selector de Rol */}

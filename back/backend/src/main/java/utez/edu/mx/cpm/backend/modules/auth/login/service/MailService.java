@@ -28,4 +28,17 @@ public class MailService {
         );
         mailSender.send(message);
     }
+
+    public void sendNewUserPasswordEmail(String to, String nombre, String password) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Bienvenido a UniformPro Manager - Tus credenciales");
+        message.setText(
+                "Hola " + nombre + ",\n\n"
+                        + "Tu cuenta ha sido creada exitosamente.\n\n"
+                        + "Tu contraseña temporal autogenerada es: " + password + "\n\n"
+                        + "Te recomendamos iniciar sesión y cambiar tu contraseña lo antes posible."
+        );
+        mailSender.send(message);
+    }
 }

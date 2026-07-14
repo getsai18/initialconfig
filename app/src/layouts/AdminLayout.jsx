@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Building2, Activity, UserCircle, Shirt, FileText, ClipboardCheck } from 'lucide-react'
 import { Sidebar } from '@/layouts/Sidebar'
 import LogoutModal from '@/kernel/components/LogoutModal'
@@ -13,7 +13,7 @@ import { PrendasPage } from '@/modules/authenticated/initialConfig/prendas/pages
 
 export function AdminLayout({ onLogout, isSubAdmin }) {
   const adminMenuItems = [
-    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, path: '/' },
+    { id: 'inicio', label: 'Inicio', icon: LayoutDashboard, path: '/inicio' },
     { id: 'usuarios', label: 'Usuarios', icon: Users, path: '/usuarios' },
     { id: 'areas', label: 'Áreas', icon: Building2, path: '/areas' },
     { id: 'actividades', label: 'Actividades', icon: Activity, path: '/actividades' },
@@ -25,15 +25,15 @@ export function AdminLayout({ onLogout, isSubAdmin }) {
 
   const adminUser = isSubAdmin
     ? {
-        initials: 'S',
-        role: 'Subadministrador',
-        name: 'subadmin@uniformespro.com'
-      }
+      initials: 'S',
+      role: 'Subadministrador',
+      name: 'subadmin@uniformespro.com'
+    }
     : {
-        initials: 'A',
-        role: 'Administrador',
-        name: 'admin@uniformespro.com.com'
-      };
+      initials: 'A',
+      role: 'Administrador',
+      name: 'admin@uniformespro.com.com'
+    };
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
@@ -48,7 +48,12 @@ export function AdminLayout({ onLogout, isSubAdmin }) {
       />
       <main className="flex-1 overflow-y-auto">
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
+          {/* Fallbacks de navegación */}
+          <Route path="/" element={<Navigate to={"/inicio"} replace />} />
+          <Route path="/*" element={<Navigate to={"/inicio"} replace />} />
+
+          {/* Rutas de navegación */}
+          <Route path="/inicio" element={<DashboardPage />} />
           <Route path="/usuarios" element={<UsersPage isSubAdmin={isSubAdmin} />} />
           <Route path="/areas" element={<AreasPage isSubAdmin={isSubAdmin} />} />
           <Route path="/actividades" element={<ActivitiesPage isSubAdmin={isSubAdmin} />} />

@@ -24,6 +24,7 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
     private final UsuarioRepository usuarioRepository;
     private final AreaRepository areaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final utez.edu.mx.cpm.backend.modules.auth.login.service.MailService mailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -43,19 +44,37 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
         Area area = resolveArea(request.getAreaId());
         RolUsuario rol = parseRol(request.getRole());
 
+        String generatedPassword = null;
+        String finalPasswordStr = request.getPassword();
+        if (finalPasswordStr == null || finalPasswordStr.isBlank()) {
+            generatedPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+            finalPasswordStr = generatedPassword;
+        }
+
         Usuario usuario = Usuario.builder()
                 .usuario(normalizeRequired(request.getUsuario(), "El usuario es requerido."))
                 .nombre(normalizeRequired(request.getNombre(), "El nombre es requerido."))
                 .email(normalizeRequired(request.getEmail(), "El email es requerido."))
-                .password(request.getPassword() != null && !request.getPassword().isBlank()
-                        ? encodePassword(request.getPassword().trim())
-                        : null)
+                .password(encodePassword(finalPasswordStr.trim()))
                 .rol(rol)
                 .area(area)
                 .estado(normalizeEstado(request.getEstado(), true))
                 .build();
 
-        return toResponse(usuarioRepository.save(usuario));
+        System.out.println("=> DEBUG CREATE USUARIO: " + usuario.getUsuario() + " | Password set? " + (usuario.getPassword() != null));
+
+        Usuario saved = usuarioRepository.save(usuario);
+
+        if (generatedPassword != null) {
+            try {
+                mailService.sendNewUserPasswordEmail(saved.getEmail(), saved.getNombre(), generatedPassword);
+            } catch (Exception e) {
+                // Loguear error pero no revertir la creación de usuario
+                System.err.println("Error al enviar correo de bienvenida: " + e.getMessage());
+            }
+        }
+
+        return toResponse(saved);
     }
 
     @Override
@@ -72,6 +91,8 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
         usuario.setRol(parseRol(request.getRole()));
         usuario.setArea(resolveArea(request.getAreaId()));
         usuario.setEstado(normalizeEstado(request.getEstado(), false));
+
+        System.out.println("=> DEBUG UPDATE USUARIO: " + usuario.getUsuario() + " | Password set? " + (usuario.getPassword() != null));
 
         return toResponse(usuarioRepository.save(usuario));
     }
@@ -101,8 +122,7 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
         usuarioRepository.findAll().stream()
                 .filter(existing -> existing.getEmail() != null && existing.getEmail().equalsIgnoreCase(email))
                 .filter(existing -> currentId == null || !existing.getId().equals(currentId))
-                .findFirst()
-                .ifPresent(existing -> { throw new AppException(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo."); });
+                .findFirst();
     }
 
     private Area resolveArea(Long areaId) {
