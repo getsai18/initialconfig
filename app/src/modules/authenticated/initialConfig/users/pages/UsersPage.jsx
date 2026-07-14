@@ -290,13 +290,13 @@ export function UsersPage({ isSubAdmin }) {
           </div>
 
           {/* Campo de Área Asignada inteligente y dinámico */}
-          {selectedRole && selectedRole !== 'SUB_ADMIN' && (
+          {selectedRole && selectedRole !== 'SUB_ADMIN' && selectedRole !== 'MANAGEMENT' && 
+            selectedRole !== 'ATTENDANCE' &&  (
             <div>
               <label className="block text-sm mb-1">Área asignada</label>
               <select
                 {...register('areaId', { required: 'El área es requerida' })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-75 disabled:bg-muted"
-                disabled={selectedRole === 'MANAGEMENT' || selectedRole === 'ATTENDANCE'}
               >
                 {selectedRole === 'EMPLOYEE' && <option value="">Seleccionar área</option>}
 
