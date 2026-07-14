@@ -1,5 +1,5 @@
-import { LoginPage } from '@/modules/public/auth/pages/LoginPage'
+import { Login } from '@/modules/public/auth/pages/Login'
 
 export function PublicRouter({ onLogin }) {
-  return <LoginPage onLogin={onLogin} />
+  return <Login onLogin={onLogin} />
 }
