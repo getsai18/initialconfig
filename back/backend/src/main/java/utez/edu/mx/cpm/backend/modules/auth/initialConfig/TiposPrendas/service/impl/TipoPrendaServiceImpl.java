@@ -1,6 +1,8 @@
 package utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,8 +11,6 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.TipoPrend
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.TipoPrendaRepository;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.dto.TipoPrendaRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.dto.TipoPrendaResponse;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,8 +21,13 @@ public class TipoPrendaServiceImpl implements utez.edu.mx.cpm.backend.modules.au
 
     @Override
     @Transactional(readOnly = true)
-    public List<TipoPrendaResponse> findAll() {
-        return tipoPrendaRepository.findAll().stream().map(this::toResponse).toList();
+    public Page<TipoPrendaResponse> findAll(Pageable pageable, String q) {
+        if (q == null || q.isBlank()) {
+            return tipoPrendaRepository.findAll(pageable).map(this::toResponse);
+        }
+        String term = q.trim();
+        return tipoPrendaRepository.findByNombreContainingIgnoreCaseOrCategoriaContainingIgnoreCase(term, term, pageable)
+                .map(this::toResponse);
     }
 
     @Override
@@ -51,8 +56,7 @@ public class TipoPrendaServiceImpl implements utez.edu.mx.cpm.backend.modules.au
     public TipoPrendaResponse update(Long id, TipoPrendaRequest request) {
         TipoPrenda tipoPrenda = findEntity(id);
         String nombre = required(request.getNombre(), "El nombre de la prenda es requerido.");
-        boolean duplicate = tipoPrendaRepository.findAll().stream()
-                .anyMatch(existing -> existing.getNombre() != null && existing.getNombre().equalsIgnoreCase(nombre) && !existing.getId().equals(id));
+        boolean duplicate = tipoPrendaRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id);
         if (duplicate) {
             throw new AppException(HttpStatus.CONFLICT, "Ya existe una prenda con ese nombre.");
         }

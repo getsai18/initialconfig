@@ -1,8 +1,9 @@
 package utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import utez.edu.mx.cpm.backend.kernel.exceptions.AppException;
@@ -10,10 +11,7 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.Area;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.AreaRepository;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.dto.AreaRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.dto.AreaResponse;
-import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.Usuario;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.UsuarioRepository;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +23,13 @@ public class AreaServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.ini
 
     @Override
     @Transactional(readOnly = true)
-    public List<AreaResponse> findAll() {
-        return areaRepository.findAll().stream().map(this::toResponse).toList();
+    public Page<AreaResponse> findAll(Pageable pageable, String q) {
+        if (q == null || q.isBlank()) {
+            return areaRepository.findAll(pageable).map(this::toResponse);
+        }
+        String term = q.trim();
+        return areaRepository.findByNombreContainingIgnoreCaseOrDescripcionContainingIgnoreCase(term, term, pageable)
+                .map(this::toResponse);
     }
 
     @Override
@@ -70,7 +73,7 @@ public class AreaServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.ini
     @Override
     public void delete(Long id) {
         Area area = findEntity(id);
-        boolean areaInUse = usuarioRepository.findAll().stream().anyMatch(usuario -> usuario.getArea() != null && usuario.getArea().getId().equals(area.getId()));
+        boolean areaInUse = usuarioRepository.existsByArea_Id(area.getId());
         if (areaInUse) {
             throw new AppException(HttpStatus.CONFLICT, "No se puede eliminar el área porque tiene usuarios asignados.");
         }

@@ -1,12 +1,12 @@
 package utez.edu.mx.cpm.backend.modules.auth.initialConfig.Clientes.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Clientes.dto.ClienteRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Clientes.dto.ClienteResponse;
 
-import java.util.List;
-
 public interface ClienteService {
-    List<ClienteResponse> findAll();
+    Page<ClienteResponse> findAll(Pageable pageable, String q);
     ClienteResponse findById(String id);
     ClienteResponse create(ClienteRequest request);
     ClienteResponse update(String id, ClienteRequest request);

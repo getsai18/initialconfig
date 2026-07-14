@@ -1,6 +1,8 @@
 package utez.edu.mx.cpm.backend.modules.auth.initialConfig.Clientes.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +13,6 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Clientes.dto.ClienteRe
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Clientes.dto.ClienteResponse;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,8 +24,13 @@ public class ClienteServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClienteResponse> findAll() {
-        return clienteRepository.findAll().stream().map(this::toResponse).toList();
+    public Page<ClienteResponse> findAll(Pageable pageable, String q) {
+        if (q == null || q.isBlank()) {
+            return clienteRepository.findAll(pageable).map(this::toResponse);
+        }
+        String term = q.trim();
+        return clienteRepository.findByNombreContainingIgnoreCaseOrVendorContainingIgnoreCase(term, term, pageable)
+                .map(this::toResponse);
     }
 
     @Override
