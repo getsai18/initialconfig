@@ -6,6 +6,7 @@ import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
 import { useClientes } from '../hooks/useClientes'
 import ClientesService from '../services/ClientesService'
+import Loading from '@/kernel/components/Loading'
 
 const estadoOrdenConfig = {
   completado: { label: 'Completado', color: 'bg-green-100 text-green-700' },
@@ -20,6 +21,7 @@ export function ClientesPage({ isSubAdmin }) {
   const {
     clientes, createCliente, updateCliente, removeCliente,
     page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+    pageLoading,
   } = useClientes()
 
   const [filterTipo, setFilterTipo] = useState('todos')
@@ -32,6 +34,10 @@ export function ClientesPage({ isSubAdmin }) {
 
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
+
+  // Estados de carga de peticiones
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({ defaultValues: { tipo: 'individual' } })
 
@@ -85,28 +91,45 @@ export function ClientesPage({ isSubAdmin }) {
     setModalOpen(true)
   }
 
-  function onSubmit(data) {
+  async function onSubmit(data) {
     if (isView) return
 
-    if (editTarget) {
-      updateCliente(editTarget.id, { nombre: data.nombre, vendor: data.vendor, informacion: data.informacion })
-      setModalOpen(false)
-      setEditSuccessModal(data)
-    } else {
-      createCliente({ nombre: data.nombre, vendor: data.vendor, informacion: data.informacion })
-      setModalOpen(false)
-      setEditSuccessModal(data)
+    setSavingMessage(editTarget ? 'Actualizando cliente...' : 'Creando cliente...')
+    setIsSaving(true)
+    try {
+      if (editTarget) {
+        await updateCliente(editTarget.id, { nombre: data.nombre, vendor: data.vendor, informacion: data.informacion })
+        setModalOpen(false)
+        setEditSuccessModal(data)
+      } else {
+        const nuevo = await createCliente({ nombre: data.nombre, vendor: data.vendor, informacion: data.informacion })
+        setSuccessModal(nuevo)
+        setModalOpen(false)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteModal) return
-    removeCliente(deleteModal.id)
-    setDeleteModal(null)
+    setSavingMessage('Eliminando cliente...')
+    setIsSaving(true)
+    try {
+      await removeCliente(deleteModal.id)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
+      setDeleteModal(null)
+    }
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-6">
         <h1 className ="font-bold">Clientes</h1>
       </div>
@@ -139,7 +162,13 @@ export function ClientesPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {pageItems.length === 0 ? (
+            {pageLoading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10">
+                  <Loading message="Cargando clientes..." />
+                </td>
+              </tr>
+            ) : pageItems.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No se encontraron clientes</td></tr>
             ) : (
               pageItems.map((c, idx) => (

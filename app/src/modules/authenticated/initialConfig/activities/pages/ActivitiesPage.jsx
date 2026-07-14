@@ -4,6 +4,7 @@ import { Pagination } from '@/kernel/components/Pagination'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
 import { useActivities } from '../hooks/useActivities'
+import Loading from '@/kernel/components/Loading'
 
 const tipoConfig = {
   radio: { label: 'Una opción', color: 'bg-blue-100 text-blue-700' },
@@ -327,6 +328,7 @@ export function ActivitiesPage({ isSubAdmin }) {
   const {
     activities: actividades, createActivity, updateActivity, removeActivity,
     page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+    pageLoading,
   } = useActivities()
   const [builderOpen, setBuilderOpen] = useState(false)
   const [isViewMode, setIsViewMode] = useState(false)
@@ -335,6 +337,10 @@ export function ActivitiesPage({ isSubAdmin }) {
 
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
+
+  // Estados de carga de peticiones
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   useEscapeToClose([
     [successModal, () => setSuccessModal(null)],
@@ -347,27 +353,43 @@ export function ActivitiesPage({ isSubAdmin }) {
   function openEdit(a) { setEditTarget(a); setIsViewMode(false); setBuilderOpen(true) }
   function openView(a) { setEditTarget(a); setIsViewMode(true); setBuilderOpen(true) }
 
-  function handleSave(data) {
-    if (editTarget) {
-      updateActivity(editTarget.id, data)
-      setBuilderOpen(false)
-      setEditSuccessModal(data)
-    } else {
-      createActivity(data).then((nueva) => {
+  async function handleSave(data) {
+    setSavingMessage(editTarget ? 'Actualizando actividad...' : 'Creando actividad...')
+    setIsSaving(true)
+    try {
+      if (editTarget) {
+        await updateActivity(editTarget.id, data)
+        setBuilderOpen(false)
+        setEditSuccessModal(data)
+      } else {
+        const nueva = await createActivity(data)
         setSuccessModal(nueva)
-      })
-      setBuilderOpen(false)
+        setBuilderOpen(false)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteModal) return
-    removeActivity(deleteModal.id)
-    setDeleteModal(null)
+    setSavingMessage('Eliminando actividad...')
+    setIsSaving(true)
+    try {
+      await removeActivity(deleteModal.id)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
+      setDeleteModal(null)
+    }
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className ="font-bold">Actividades</h1>
       </div>
@@ -398,7 +420,13 @@ export function ActivitiesPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {pageItems.length === 0 ? (
+            {pageLoading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10">
+                  <Loading message="Cargando actividades..." />
+                </td>
+              </tr>
+            ) : pageItems.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No se encontraron actividades</td></tr>
             ) : (
               pageItems.map((a, idx) => {

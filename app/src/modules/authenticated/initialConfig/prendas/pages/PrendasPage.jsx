@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
 import { usePrendas } from '../hooks/usePrendas'
+import Loading from '@/kernel/components/Loading'
 
 const ICONOS = [
   { id: 'superiores', emoji: <Shirt />, label: 'Prenda superior', desc: 'Playeras, polos, chamarras...' },
@@ -25,7 +26,7 @@ const iconoEmoji = {
 const iconoBg = { superiores: 'bg-gray-100', inferiores: 'bg-gray-100', accesorios: 'bg-gray-100', otros: 'bg-gray-50' }
 
 export function PrendasPage({ isSubAdmin }) {
-  const { prendas, createPrenda, updatePrenda, removePrenda } = usePrendas()
+  const { prendas, loading, createPrenda, updatePrenda, removePrenda } = usePrendas()
 
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -34,6 +35,10 @@ export function PrendasPage({ isSubAdmin }) {
 
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
+
+  // Estados de carga de peticiones
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({ defaultValues: { nombre: '', icono: 'superiores' } })
 
@@ -52,25 +57,43 @@ export function PrendasPage({ isSubAdmin }) {
   function openCreate() { setEditTarget(null); reset({ nombre: '', icono: 'superiores' }); setModalOpen(true) }
   function openEdit(p) { setEditTarget(p); reset({ nombre: p.nombre, icono: p.icono }); setModalOpen(true) }
 
-  function onSubmit(data) {
-    if (editTarget) {
-      updatePrenda(editTarget.id, data)
-      setModalOpen(false)
-      setEditSuccessModal(data)
-    } else {
-      createPrenda(data).then((nueva) => setSuccessModal(nueva))
-      setModalOpen(false)
+  async function onSubmit(data) {
+    setSavingMessage(editTarget ? 'Actualizando prenda...' : 'Creando prenda...')
+    setIsSaving(true)
+    try {
+      if (editTarget) {
+        await updatePrenda(editTarget.id, data)
+        setModalOpen(false)
+        setEditSuccessModal(data)
+      } else {
+        const nueva = await createPrenda(data)
+        setSuccessModal(nueva)
+        setModalOpen(false)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteModal) return
-    removePrenda(deleteModal.id)
-    setDeleteModal(null)
+    setSavingMessage('Eliminando prenda...')
+    setIsSaving(true)
+    try {
+      await removePrenda(deleteModal.id)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
+      setDeleteModal(null)
+    }
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className ="font-bold">Tipos de Prendas</h1>
       </div>
@@ -88,7 +111,11 @@ export function PrendasPage({ isSubAdmin }) {
         </button>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="py-20 flex justify-center">
+          <Loading message="Cargando tipos de prendas..." />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <img alt="" src="https://img.icons8.com/?size=100&id=10506&format=png&color=000000" className="w-12 mb-4 opacity-40" />
           <p className="text-muted-foreground">No se encontraron prendas</p>

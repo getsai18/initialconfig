@@ -8,6 +8,7 @@ import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
 import { ROLE_LABELS as roleConfig } from '@/kernel/auth/roleLabels'
 import { useUsers } from '../hooks/useUsers'
 import { useAreas } from '../../areas/hooks/useAreas'
+import Loading from '@/kernel/components/Loading'
 
 const PAGE_SIZE = 10
 
@@ -20,6 +21,7 @@ export function UsersPage({ isSubAdmin }) {
   const {
     users: usuarios, createUser, updateUser, removeUser,
     page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+    pageLoading,
   } = useUsers()
   const { areas } = useAreas()
 
@@ -33,6 +35,10 @@ export function UsersPage({ isSubAdmin }) {
   // Estados de éxito
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
+
+  // Estados de carga de peticiones
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   // Agregamos 'setValue' para poder modificar el areaId dinámicamente desde el useEffect
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm()
@@ -99,30 +105,46 @@ export function UsersPage({ isSubAdmin }) {
     setModalOpen(true)
   }
 
-  function onSubmit(data) {
+  async function onSubmit(data) {
     // Permitimos que guarde el areaId asignado para cualquier rol (MANAGEMENT, ATTENDANCE o EMPLOYEE)
     const areaId = data.areaId !== '' ? Number(data.areaId) : null
 
-    if (editTarget) {
-      updateUser(editTarget.id, { ...data, areaId })
-      setModalOpen(false)
-      setEditSuccessModal(data)
-    } else {
-      createUser({ ...data, areaId }).then((nuevo) => {
+    setSavingMessage(editTarget ? 'Actualizando usuario...' : 'Creando usuario...')
+    setIsSaving(true)
+    try {
+      if (editTarget) {
+        await updateUser(editTarget.id, { ...data, areaId })
+        setModalOpen(false)
+        setEditSuccessModal(data)
+      } else {
+        const nuevo = await createUser({ ...data, areaId })
         setSuccessModal(nuevo)
-      })
-      setModalOpen(false)
+        setModalOpen(false)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteModal) return
-    removeUser(deleteModal.id)
-    setDeleteModal(null)
+    setSavingMessage('Eliminando usuario...')
+    setIsSaving(true)
+    try {
+      await removeUser(deleteModal.id)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
+      setDeleteModal(null)
+    }
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className="font-bold">Usuarios</h1>
       </div>
@@ -165,7 +187,13 @@ export function UsersPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {pageItems.length === 0 ? (
+            {pageLoading ? (
+              <tr>
+                <td colSpan={9} className="px-4 py-10">
+                  <Loading message="Cargando usuarios..." />
+                </td>
+              </tr>
+            ) : pageItems.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">No se encontraron usuarios</td>
               </tr>

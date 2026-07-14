@@ -5,6 +5,7 @@ import { Pagination } from '@/kernel/components/Pagination'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
 import { useAreas } from '../hooks/useAreas'
+import Loading from '@/kernel/components/Loading'
 
 const PAGE_SIZE = 10
 
@@ -12,6 +13,7 @@ export function AreasPage({ isSubAdmin }) {
   const {
     areas, createArea, updateArea, removeArea,
     page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+    pageLoading,
   } = useAreas()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -20,6 +22,10 @@ export function AreasPage({ isSubAdmin }) {
 
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
+
+  // Estados de carga de peticiones
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
@@ -42,27 +48,43 @@ export function AreasPage({ isSubAdmin }) {
     setModalOpen(true)
   }
 
-  function onSubmit(data) {
-    if (editTarget) {
-      updateArea(editTarget.id, { nombre: data.nombre, descripcion: data.descripcion, estado: data.estado })
-      setModalOpen(false)
-      setEditSuccessModal(data)
-    } else {
-      createArea({ nombre: data.nombre, descripcion: data.descripcion }).then((nueva) => {
+  async function onSubmit(data) {
+    setSavingMessage(editTarget ? 'Actualizando área...' : 'Creando área...')
+    setIsSaving(true)
+    try {
+      if (editTarget) {
+        await updateArea(editTarget.id, { nombre: data.nombre, descripcion: data.descripcion, estado: data.estado })
+        setModalOpen(false)
+        setEditSuccessModal(data)
+      } else {
+        const nueva = await createArea({ nombre: data.nombre, descripcion: data.descripcion })
         setSuccessModal(nueva)
-      })
-      setModalOpen(false)
+        setModalOpen(false)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteModal) return
-    removeArea(deleteModal.id)
-    setDeleteModal(null)
+    setSavingMessage('Eliminando área...')
+    setIsSaving(true)
+    try {
+      await removeArea(deleteModal.id)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSaving(false)
+      setDeleteModal(null)
+    }
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className ="font-bold">Áreas</h1>
       </div>
@@ -92,7 +114,13 @@ export function AreasPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {pageItems.length === 0 ? (
+            {pageLoading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10">
+                  <Loading message="Cargando áreas..." />
+                </td>
+              </tr>
+            ) : pageItems.length === 0 ? (
               <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No se encontraron áreas</td></tr>
             ) : (
               pageItems.map((a, idx) => (
