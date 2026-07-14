@@ -17,6 +17,8 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.dto.UsuarioReq
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.dto.UsuarioResponse;
 import utez.edu.mx.cpm.backend.modules.auth.login.service.MailService;
 
+import java.util.spi.LocaleServiceProvider;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -122,10 +124,8 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
                 .filter(existing -> currentId == null || !existing.getId().equals(currentId))
                 .ifPresent(existing -> { throw new AppException(HttpStatus.CONFLICT, "Ya existe un usuario con ese nombre de usuario."); });
 
-        usuarioRepository.findByEmailIgnoreCase(email)
-                .filter(existing -> currentId == null || !existing.getId().equals(currentId))
-                .ifPresent(existing -> { throw new AppException(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo."); });
     }
+    
 
     private Area resolveArea(Long areaId) {
         if (areaId == null) {

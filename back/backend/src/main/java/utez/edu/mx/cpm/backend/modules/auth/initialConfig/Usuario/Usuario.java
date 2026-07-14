@@ -41,7 +41,7 @@ public class Usuario {
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String email;
 
     /** Nullable: el formulario de creación del frontend (UsersPage.jsx) hoy no
