@@ -1,6 +1,7 @@
 package utez.edu.mx.cpm.backend.kernel.utils;
 
 import lombok.Data;
+import org.springframework.boot.logging.log4j2.WhitespaceThrowablePatternConverter;
 import org.springframework.http.HttpStatus;
 
 
@@ -54,7 +55,7 @@ public class ApiResponse {
      * */
     public ApiResponse(String message, Object data, HttpStatus httpStatus) {
         this.message = message;
-        this.data = data;
+        this.data = data;// what is your question?
         this.httpStatus = httpStatus;
     }
 
