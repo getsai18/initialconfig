@@ -254,10 +254,6 @@ export function UsersPage({ isSubAdmin }) {
               <div>
               <label className="block text-sm mb-1">Nombre</label>
               <input maxLength={30} {...register('nombre', { required: 'El nombre es requerido', maxLength: { value: 30, message: 'Máximo 30 caracteres' }, validate: (value) => {
-              const existe = usuarios.some(u =>
-              u.nombre.toLowerCase() === value.toLowerCase() && u.id !== editTarget?.id
-               );
-               return !existe || 'Este nombre ya está registrado';
                 } })} type="text" placeholder="Ej. Juan Pérez" className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 {errors.nombre && <p className="text-xs text-destructive mt-1">{errors.nombre.message}</p>}
               </div>

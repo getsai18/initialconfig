@@ -1,0 +1,43 @@
+# Compilados de Java (Maven)
+**/target/
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Dependencias y compilaciones del frontend (Node/React)
+**/node_modules/
+node_modules/
+**/dist/
+dist/
+dist-ssr/
+
+# Variables de entorno locales
+.env
+.env.*
+!.env.example
+
+# Configuración de editores/IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+!.vscode/extensions.json
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# Logs y archivos temporales
+*.log
+*.tmp
+*.bak
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

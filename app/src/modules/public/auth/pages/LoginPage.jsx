@@ -219,13 +219,13 @@ export function LoginPage({ onLogin }) {
               {recoverySent && <p className="text-amber-500 text-xs text-center font-medium mt-2">Ya has solicitado la recuperación de contraseña en esta sesión.</p>}
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={resetToLogin} className="flex-1 bg-secondary text-secondary-foreground py-2 rounded-lg text-sm hover:opacity-90 transition-opacity border border-border">
+                <button type="button" onClick={resetToLogin} className="flex-1 bg-secondary text-secondary-foreground py-2 rounded-lg text-sm hover:opacity-50 transition-opacity border border-border">
                   Volver al Login
                 </button>
                 <button
                   type="submit"
                   disabled={recoverySent}
-                  className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {recoverySent ? 'Solicitado' : 'Verificar Datos'}
                 </button>
