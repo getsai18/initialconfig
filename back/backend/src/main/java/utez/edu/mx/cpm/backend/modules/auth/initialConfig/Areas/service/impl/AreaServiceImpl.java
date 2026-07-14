@@ -13,6 +13,8 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.dto.AreaRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Areas.dto.AreaResponse;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.UsuarioRepository;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -49,6 +51,7 @@ public class AreaServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.ini
                 .nombre(nombre)
                 .descripcion(normalizeOptional(request.getDescripcion()))
                 .estado(normalizeEstado(request.getEstado(), true))
+                .fechaCreacion(LocalDateTime.now())
                 .build();
         return toResponse(areaRepository.save(area));
     }

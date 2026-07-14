@@ -12,6 +12,8 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.TipoPrend
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.dto.TipoPrendaRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.TiposPrendas.dto.TipoPrendaResponse;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -48,6 +50,7 @@ public class TipoPrendaServiceImpl implements utez.edu.mx.cpm.backend.modules.au
                 .categoria(resolveCategoria(request.getCategoria(), icono))
                 .icono(icono)
                 .tallasDisponibles(normalizeOptional(request.getTallasDisponibles()))
+                .fechaCreacion(LocalDateTime.now())
                 .build();
         return toResponse(tipoPrendaRepository.save(tipoPrenda));
     }

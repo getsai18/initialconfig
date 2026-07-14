@@ -12,6 +12,7 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.ActividadesCatalogo.Ac
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.ActividadesCatalogo.dto.ActividadCatalogoRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.ActividadesCatalogo.dto.ActividadCatalogoResponse;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Service
@@ -50,6 +51,7 @@ public class ActividadCatalogoServiceImpl implements utez.edu.mx.cpm.backend.mod
                 .opciones(request.getOpciones() != null ? new ArrayList<>(request.getOpciones()) : new ArrayList<>())
                 .etiquetas(request.getEtiquetas() != null ? new ArrayList<>(request.getEtiquetas()) : new ArrayList<>())
                 .nota(normalizeOptional(request.getNota()))
+                .fechaCreacion(LocalDateTime.now())
                 .build();
         return toResponse(actividadCatalogoRepository.save(actividad));
     }

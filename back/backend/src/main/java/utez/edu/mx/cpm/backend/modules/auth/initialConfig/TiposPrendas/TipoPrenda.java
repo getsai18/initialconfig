@@ -39,7 +39,7 @@ public class TipoPrenda {
     @Column(name = "tallas_disponibles", columnDefinition = "TEXT")
     private String tallasDisponibles;
 
-    @Column(name = "fecha_creacion", insertable = false, updatable = false)
+    @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 }
 

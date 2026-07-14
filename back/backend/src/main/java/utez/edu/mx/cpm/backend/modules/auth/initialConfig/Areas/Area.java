@@ -36,7 +36,7 @@ public class Area {
     @Column(nullable = false, length = 20)
     private String estado;
 
-    @Column(name = "fecha_creacion", insertable = false, updatable = false)
+    @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 }
 

@@ -59,7 +59,7 @@ public class ActividadCatalogo {
     @Column(length = 500)
     private String nota;
 
-    @Column(name = "fecha_creacion", insertable = false, updatable = false)
+    @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 }
 
