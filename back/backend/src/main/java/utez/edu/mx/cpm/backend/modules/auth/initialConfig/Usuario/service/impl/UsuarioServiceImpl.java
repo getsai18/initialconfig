@@ -15,6 +15,7 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.Usuario;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.UsuarioRepository;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.dto.UsuarioRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.dto.UsuarioResponse;
+import utez.edu.mx.cpm.backend.modules.auth.login.service.MailService;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
     private final UsuarioRepository usuarioRepository;
     private final AreaRepository areaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -49,19 +51,34 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
         Area area = resolveArea(request.getAreaId());
         RolUsuario rol = parseRol(request.getRole());
 
+        String rawPassword = request.getPassword();
+        boolean isTemporary = false;
+        if (rawPassword == null || rawPassword.isBlank()) {
+            rawPassword = generateRandomPassword();
+            isTemporary = true;
+        }
+
         Usuario usuario = Usuario.builder()
                 .usuario(normalizeRequired(request.getUsuario(), "El usuario es requerido."))
                 .nombre(normalizeRequired(request.getNombre(), "El nombre es requerido."))
                 .email(normalizeRequired(request.getEmail(), "El email es requerido."))
-                .password(request.getPassword() != null && !request.getPassword().isBlank()
-                        ? encodePassword(request.getPassword().trim())
-                        : null)
+                .password(encodePassword(rawPassword.trim()))
                 .rol(rol)
                 .area(area)
                 .estado(normalizeEstado(request.getEstado(), true))
                 .build();
 
-        return toResponse(usuarioRepository.save(usuario));
+        UsuarioResponse response = toResponse(usuarioRepository.save(usuario));
+
+        if (isTemporary) {
+            try {
+                mailService.sendInitialPasswordEmail(usuario.getEmail(), usuario.getNombre(), usuario.getUsuario(), rawPassword);
+            } catch (Exception e) {
+                System.err.println("Error enviando correo de contraseña inicial: " + e.getMessage());
+            }
+        }
+
+        return response;
     }
 
     @Override
@@ -144,6 +161,17 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
             throw new AppException(HttpStatus.BAD_REQUEST, "El estado debe ser 'activo' o 'inactivo'.");
         }
         return normalized;
+    }
+
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(RANDOM.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private String encodePassword(String rawPassword) {

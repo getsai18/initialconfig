@@ -8,15 +8,19 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import com.cds.initialconfig.auth.MailService;
+
 @Service
 public class UserService {
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
 
-    public UserService(UserRepository repository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository repository, PasswordEncoder passwordEncoder, MailService mailService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.mailService = mailService;
     }
 
     public List<UserResponse> findAll() {
@@ -41,19 +45,36 @@ public class UserService {
         if (req.email() != null && req.email().length() > 30) throw new IllegalArgumentException("email máximo 30 caracteres");
         if (req.role() == null) throw new IllegalArgumentException("role es requerido");
 
+        String rawPassword = req.password();
+        boolean isTemporary = false;
+        if (rawPassword == null || rawPassword.isBlank()) {
+            rawPassword = generateRandomPassword();
+            isTemporary = true;
+        }
+
         Usuario u = Usuario.builder()
             .id(req.id())
             .usuario(req.usuario())
             .nombre(req.nombre())
             .email(req.email())
-            .password(hashOrNull(req.password()))
+            .password(passwordEncoder.encode(rawPassword.trim()))
             .role(req.role())
             .areaId(req.areaId())
             .estado(req.estado() != null ? req.estado() : EstadoUsuario.activo)
             .fechaCreacion(LocalDate.now())
             .build();
 
-        return UserResponse.from(repository.save(u));
+        UserResponse response = UserResponse.from(repository.save(u));
+
+        if (isTemporary) {
+            try {
+                mailService.sendInitialPasswordEmail(u.getEmail(), u.getNombre(), u.getUsuario(), rawPassword);
+            } catch (Exception e) {
+                System.err.println("Error enviando correo de contraseña inicial: " + e.getMessage());
+            }
+        }
+
+        return response;
     }
 
     /**
@@ -107,6 +128,17 @@ public class UserService {
     public void delete(Long id) {
         Usuario u = findByIdOrThrow(id);
         repository.delete(u);
+    }
+
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(RANDOM.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private String hashOrNull(String rawPassword) {
