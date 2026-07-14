@@ -6,7 +6,9 @@ import { UnimplementedRoleScreen } from '@/routes/UnimplementedRoleScreen'
 const IMPLEMENTED_ROLES = ['ADMIN', 'SUB_ADMIN']
 
 export default function App() {
-  const [role, setRole] = useState(null)
+  const [role, setRole] = useState(() => {
+    return sessionStorage.getItem('role') || localStorage.getItem('role') || null;
+  });
 
   function handleLogin(newRole) {
     setRole(newRole)
@@ -14,6 +16,9 @@ export default function App() {
 
   function handleLogout() {
     sessionStorage.removeItem('token')
+    sessionStorage.removeItem('role')
+    localStorage.removeItem('token')
+    localStorage.removeItem('role')
     setRole(null)
   }
 

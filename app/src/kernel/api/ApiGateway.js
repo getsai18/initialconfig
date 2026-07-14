@@ -1,10 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
 function buildHeaders() {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   return {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+    Authorization: `Bearer ${token}`,
   };
 }
 

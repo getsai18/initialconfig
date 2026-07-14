@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Lock, User, Mail, KeyRound, CheckCircle2 } from 'lucide-react'
 import AuthService from '@/modules/public/auth/services/AuthService'
+import Loading from '@/kernel/components/Loading'
 
 const GENERIC_ERROR = 'Ocurrió un error. Intenta nuevamente.'
 
@@ -22,6 +23,11 @@ export function LoginPage({ onLogin }) {
   const [verificationError, setVerificationError] = useState('')
   const [resetPasswordError, setResetPasswordError] = useState('')
 
+  // Estados de Carga y Restricción
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('Procesando...')
+  const [recoverySent, setRecoverySent] = useState(() => sessionStorage.getItem('recoveryRequestSent') === 'true')
+
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm()
 
   // Observador de contraseñas para validación cruzada en el paso final
@@ -31,51 +37,87 @@ export function LoginPage({ onLogin }) {
   const onSubmit = async (data) => {
     const usuarioInput = data.usuario.toLowerCase().trim()
 
-    const result = await AuthService.login(usuarioInput, data.password)
-
-    if (!result?.token) {
-      setLoginError(result?.message || 'Usuario o contraseña incorrectos.')
-      return
-    }
-
-    sessionStorage.setItem('token', result.token)
-
+    setLoadingMessage('Iniciando sesión...')
+    setIsLoading(true)
     setLoginError('')
-    onLogin(result.usuario?.role, result.usuario?.nombre)
+    try {
+      const result = await AuthService.login(usuarioInput, data.password)
+
+      if (!result?.token) {
+        setLoginError(result?.message || 'Usuario o contraseña incorrectos.')
+        return
+      }
+
+      // Check if "Recordarme" is selected
+      const storage = data.recordarme ? localStorage : sessionStorage
+      storage.setItem('token', result.token)
+      storage.setItem('role', result.usuario?.role || '')
+
+      onLogin(result.usuario?.role, result.usuario?.nombre)
+    } catch (error) {
+      setLoginError(GENERIC_ERROR)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // --- PASO 2: FORMULARIO DE SOLICITUD (USUARIO + CORREO) ---
   const handleRecoverySubmit = async (data) => {
-    const userInput = data.recoveryUsuario.toLowerCase().trim()
-    const emailInput = data.recoveryEmail.toLowerCase().trim()
-
-    const result = await AuthService.requestPasswordRecovery(userInput, emailInput)
-
-    if (!result?.sent) {
-      setRecoveryError(result?.message || 'No se encontró ningún usuario que coincida con ese nombre y correo.')
+    if (sessionStorage.getItem('recoveryRequestSent') === 'true') {
+      setRecoveryError('Ya has solicitado la recuperación de contraseña en esta sesión.')
       return
     }
 
+    const userInput = data.recoveryUsuario.toLowerCase().trim()
+    const emailInput = data.recoveryEmail.toLowerCase().trim()
+
+    setLoadingMessage('Enviando código de recuperación...')
+    setIsLoading(true)
     setRecoveryError('')
-    setRecoveryUsuario(userInput)
-    // Saltamos al paso de Verificación de Código OTP
-    setRecoveryStep('verify')
-    reset()
+    try {
+      const result = await AuthService.requestPasswordRecovery(userInput, emailInput)
+
+      if (!result?.sent) {
+        setRecoveryError(result?.message || 'No se encontró ningún usuario que coincida con ese nombre y correo.')
+        return
+      }
+
+      sessionStorage.setItem('recoveryRequestSent', 'true')
+      setRecoverySent(true)
+      setRecoveryError('')
+      setRecoveryUsuario(userInput)
+      // Saltamos al paso de Verificación de Código OTP
+      setRecoveryStep('verify')
+      reset()
+    } catch (error) {
+      setRecoveryError(GENERIC_ERROR)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // --- PASO 3: PANTALLA DE VERIFICACIÓN DE CÓDIGO ---
   const handleVerifyCodeSubmit = async (data) => {
-    const result = await AuthService.verifyPasswordRecovery(recoveryUsuario, data.otpCode)
-
-    if (!result?.resetToken) {
-      setVerificationError(result?.message || 'El código ingresado es incorrecto o ha expirado.')
-      return
-    }
-
+    setLoadingMessage('Validando código...')
+    setIsLoading(true)
     setVerificationError('')
-    setResetToken(result.resetToken)
-    setRecoveryStep('reset')
-    reset()
+    try {
+      const result = await AuthService.verifyPasswordRecovery(recoveryUsuario, data.otpCode)
+
+      if (!result?.resetToken) {
+        setVerificationError(result?.message || 'El código ingresado es incorrecto o ha expirado.')
+        return
+      }
+
+      setVerificationError('')
+      setResetToken(result.resetToken)
+      setRecoveryStep('reset')
+      reset()
+    } catch (error) {
+      setVerificationError(GENERIC_ERROR)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // --- PASO 4: CAMBIO FORMAL DE CONTRASEÑA ---
@@ -85,16 +127,29 @@ export function LoginPage({ onLogin }) {
       return
     }
 
-    const result = await AuthService.resetPassword(resetToken, data.nuevaPassword)
-
-    if (!result?.reset) {
-      setResetPasswordError(result?.message || GENERIC_ERROR)
-      return
-    }
-
+    setLoadingMessage('Restableciendo contraseña...')
+    setIsLoading(true)
     setResetPasswordError('')
-    setRecoveryStep('success')
-    reset()
+    try {
+      const result = await AuthService.resetPassword(resetToken, data.nuevaPassword)
+
+      if (!result?.reset) {
+        setResetPasswordError(result?.message || GENERIC_ERROR)
+        return
+      }
+
+      // Limpiar la restricción de envío ya que se completó con éxito
+      sessionStorage.removeItem('recoveryRequestSent')
+      setRecoverySent(false)
+
+      setResetPasswordError('')
+      setRecoveryStep('success')
+      reset()
+    } catch (error) {
+      setResetPasswordError(GENERIC_ERROR)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Helper para limpiar estados al regresar por completo
@@ -116,6 +171,7 @@ export function LoginPage({ onLogin }) {
   if (recoveryStep === 'request') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        {isLoading && <Loading overlay message={loadingMessage} />}
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
             <div className="text-center mb-6">
@@ -160,13 +216,18 @@ export function LoginPage({ onLogin }) {
               </div>
 
               {recoveryError && <p className="text-destructive text-sm text-center">{recoveryError}</p>}
+              {recoverySent && <p className="text-amber-500 text-xs text-center font-medium mt-2">Ya has solicitado la recuperación de contraseña en esta sesión.</p>}
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={resetToLogin} className="flex-1 bg-secondary text-secondary-foreground py-2 rounded-lg text-sm hover:opacity-90 transition-opacity border border-border">
                   Volver al Login
                 </button>
-                <button type="submit" className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm hover:opacity-90 transition-opacity">
-                  Verificar Datos
+                <button
+                  type="submit"
+                  disabled={recoverySent}
+                  className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {recoverySent ? 'Solicitado' : 'Verificar Datos'}
                 </button>
               </div>
             </form>
@@ -182,6 +243,7 @@ export function LoginPage({ onLogin }) {
   if (recoveryStep === 'verify') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        {isLoading && <Loading overlay message={loadingMessage} />}
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
             <div className="text-center mb-6">
@@ -235,6 +297,7 @@ export function LoginPage({ onLogin }) {
   if (recoveryStep === 'reset') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        {isLoading && <Loading overlay message={loadingMessage} />}
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
             <div className="text-center mb-6">
@@ -345,6 +408,7 @@ export function LoginPage({ onLogin }) {
   // ==========================================
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      {isLoading && <Loading overlay message={loadingMessage} />}
       <div className="w-full max-w-md">
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
           <div className="text-center mb-8">
@@ -395,7 +459,11 @@ export function LoginPage({ onLogin }) {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-border bg-input-background" />
+                <input
+                  type="checkbox"
+                  {...register('recordarme')}
+                  className="w-4 h-4 rounded border-border bg-input-background"
+                />
                 <span className="text-sm">Recordarme</span>
               </label>
               <button
