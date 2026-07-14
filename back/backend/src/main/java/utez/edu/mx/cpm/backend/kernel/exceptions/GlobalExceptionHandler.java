@@ -3,6 +3,7 @@ package utez.edu.mx.cpm.backend.kernel.exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -72,6 +73,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleMalformedJson(HttpMessageNotReadableException ex) {
         return build(HttpStatus.BAD_REQUEST, "Cuerpo de la petición inválido o mal formado", null);
+    }
+
+    /** Se lanza cuando el parámetro ?sort= de un listado paginado referencia un
+     *  campo que no existe en la entidad; sin este handler cae en el genérico como 500. */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ApiError> handleInvalidSort(PropertyReferenceException ex) {
+        return build(HttpStatus.BAD_REQUEST, "El campo de ordenamiento '" + ex.getPropertyName() + "' no es válido.", null);
     }
 
     @ExceptionHandler(Exception.class)

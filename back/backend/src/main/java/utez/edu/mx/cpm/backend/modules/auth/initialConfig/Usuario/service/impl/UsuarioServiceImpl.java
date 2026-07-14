@@ -1,6 +1,8 @@
 package utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,6 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.UsuarioReposit
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.dto.UsuarioRequest;
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.Usuario.dto.UsuarioResponse;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -27,8 +27,14 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
 
     @Override
     @Transactional(readOnly = true)
-    public List<UsuarioResponse> findAll() {
-        return usuarioRepository.findAll().stream().map(this::toResponse).toList();
+    public Page<UsuarioResponse> findAll(Pageable pageable, String q) {
+        if (q == null || q.isBlank()) {
+            return usuarioRepository.findAll(pageable).map(this::toResponse);
+        }
+        String term = q.trim();
+        return usuarioRepository
+                .findByNombreContainingIgnoreCaseOrUsuarioContainingIgnoreCaseOrEmailContainingIgnoreCase(term, term, term, pageable)
+                .map(this::toResponse);
     }
 
     @Override
@@ -98,10 +104,8 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
                 .filter(existing -> currentId == null || !existing.getId().equals(currentId))
                 .ifPresent(existing -> { throw new AppException(HttpStatus.CONFLICT, "Ya existe un usuario con ese nombre de usuario."); });
 
-        usuarioRepository.findAll().stream()
-                .filter(existing -> existing.getEmail() != null && existing.getEmail().equalsIgnoreCase(email))
+        usuarioRepository.findByEmailIgnoreCase(email)
                 .filter(existing -> currentId == null || !existing.getId().equals(currentId))
-                .findFirst()
                 .ifPresent(existing -> { throw new AppException(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo."); });
     }
 

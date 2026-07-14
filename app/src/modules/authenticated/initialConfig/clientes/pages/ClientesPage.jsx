@@ -17,11 +17,12 @@ const estadoOrdenConfig = {
 const PAGE_SIZE = 10
 
 export function ClientesPage({ isSubAdmin }) {
-  const { clientes, createCliente, updateCliente, removeCliente } = useClientes()
+  const {
+    clientes, createCliente, updateCliente, removeCliente,
+    page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+  } = useClientes()
 
-  const [search, setSearch] = useState('')
   const [filterTipo, setFilterTipo] = useState('todos')
-  const [page, setPage] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
   const [isView, setIsView] = useState(false)
   const [deleteModal, setDeleteModal] = useState(null)
@@ -33,17 +34,6 @@ export function ClientesPage({ isSubAdmin }) {
   const [editSuccessModal, setEditSuccessModal] = useState(null)
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({ defaultValues: { tipo: 'individual' } })
-
-  const filtered = clientes.filter(c => {
-    const matchSearch = c.nombre.toLowerCase().includes(search.toLowerCase())
-    const matchVendor = c.vendor.toLowerCase().includes(search.toLowerCase())
-    return matchSearch || matchVendor
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  useEffect(() => { setPage(1) }, [search, filterTipo])
 
   useEscapeToClose([
     [successModal, () => setSuccessModal(null)],
@@ -149,10 +139,10 @@ export function ClientesPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {pageItems.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No se encontraron clientes</td></tr>
             ) : (
-              paginated.map((c, idx) => (
+              pageItems.map((c, idx) => (
                 <tr key={c.id} title='Click para ver infomración' onClick={() => openView(c)} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
                   <td className="px-4 py-3 text-muted-foreground">{(page - 1) * PAGE_SIZE + idx + 1}</td>
                   <td className="px-4 py-3">
@@ -182,7 +172,7 @@ export function ClientesPage({ isSubAdmin }) {
         </table>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPage={setPage} totalItems={filtered.length} pageSize={PAGE_SIZE} />
+      <Pagination page={page} totalPages={totalPages} onPage={setPage} totalItems={totalElements} pageSize={PAGE_SIZE} />
 
       {historialCliente && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setHistorialCliente(null)}>

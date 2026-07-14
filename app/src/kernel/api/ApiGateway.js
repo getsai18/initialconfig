@@ -17,11 +17,20 @@ async function handleMethod(endpoint, method, body) {
   return response.json();
 }
 
+function buildQuery(params = {}) {
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') usp.set(key, value);
+  });
+  return usp.toString();
+}
+
 const ApiGateway = {
   doGet: (endpoint) => handleMethod(endpoint, 'GET'),
   doPost: (endpoint, body) => handleMethod(endpoint, 'POST', body),
   doPut: (endpoint, body) => handleMethod(endpoint, 'PUT', body),
   doDelete: (endpoint, body) => handleMethod(endpoint, 'DELETE', body),
+  buildQuery,
 };
 
 export default ApiGateway;

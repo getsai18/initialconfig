@@ -1,6 +1,8 @@
 package utez.edu.mx.cpm.backend.modules.auth.initialConfig.ActividadesCatalogo.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +13,6 @@ import utez.edu.mx.cpm.backend.modules.auth.initialConfig.ActividadesCatalogo.dt
 import utez.edu.mx.cpm.backend.modules.auth.initialConfig.ActividadesCatalogo.dto.ActividadCatalogoResponse;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +23,13 @@ public class ActividadCatalogoServiceImpl implements utez.edu.mx.cpm.backend.mod
 
     @Override
     @Transactional(readOnly = true)
-    public List<ActividadCatalogoResponse> findAll() {
-        return actividadCatalogoRepository.findAll().stream().map(this::toResponse).toList();
+    public Page<ActividadCatalogoResponse> findAll(Pageable pageable, String q) {
+        if (q == null || q.isBlank()) {
+            return actividadCatalogoRepository.findAll(pageable).map(this::toResponse);
+        }
+        String term = q.trim();
+        return actividadCatalogoRepository.findByNombreContainingIgnoreCaseOrTipoContainingIgnoreCase(term, term, pageable)
+                .map(this::toResponse);
     }
 
     @Override
@@ -52,8 +58,7 @@ public class ActividadCatalogoServiceImpl implements utez.edu.mx.cpm.backend.mod
     public ActividadCatalogoResponse update(Long id, ActividadCatalogoRequest request) {
         ActividadCatalogo actividad = findEntity(id);
         String nombre = required(request.getNombre(), "El nombre de la actividad es requerido.");
-        boolean duplicate = actividadCatalogoRepository.findAll().stream()
-                .anyMatch(existing -> existing.getNombre() != null && existing.getNombre().equalsIgnoreCase(nombre) && !existing.getId().equals(id));
+        boolean duplicate = actividadCatalogoRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id);
         if (duplicate) {
             throw new AppException(HttpStatus.CONFLICT, "Ya existe una actividad con ese nombre.");
         }

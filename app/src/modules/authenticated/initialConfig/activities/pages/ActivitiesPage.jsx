@@ -324,9 +324,10 @@ function ActividadBuilder({ initial, onSave, onCancel, isEdit, isView, actividad
 }
 
 export function ActivitiesPage({ isSubAdmin }) {
-  const { activities: actividades, createActivity, updateActivity, removeActivity } = useActivities()
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
+  const {
+    activities: actividades, createActivity, updateActivity, removeActivity,
+    page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+  } = useActivities()
   const [builderOpen, setBuilderOpen] = useState(false)
   const [isViewMode, setIsViewMode] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
@@ -334,18 +335,6 @@ export function ActivitiesPage({ isSubAdmin }) {
 
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
-
-  const filtered = [...actividades]
-    .sort((a, b) => b.id - a.id)
-    .filter(a =>
-      a.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      a.etiquetas.some(e => e.includes(search.toLowerCase()))
-  )
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  useEffect(() => { setPage(1) }, [search])
 
   useEscapeToClose([
     [successModal, () => setSuccessModal(null)],
@@ -409,10 +398,10 @@ export function ActivitiesPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {pageItems.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No se encontraron actividades</td></tr>
             ) : (
-              paginated.map((a, idx) => {
+              pageItems.map((a, idx) => {
                 const cfg = tipoConfig[a.tipo]
                 return (
                   <tr key={a.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
@@ -472,7 +461,7 @@ export function ActivitiesPage({ isSubAdmin }) {
         </table>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPage={setPage} totalItems={filtered.length} pageSize={PAGE_SIZE} />
+      <Pagination page={page} totalPages={totalPages} onPage={setPage} totalItems={totalElements} pageSize={PAGE_SIZE} />
 
       {builderOpen && (
         <ActividadBuilder
