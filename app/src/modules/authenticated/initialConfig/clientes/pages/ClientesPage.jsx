@@ -321,7 +321,8 @@ export function ClientesPage({ isSubAdmin }) {
                 <input
                   disabled={isView}
                   {...register('nombre', { required: 'El nombre es obligatorio' })}
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm disabled:opacity-70 disabled:bg-muted"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring lowercase"
+
                   placeholder="Ej. Los Tigres"
                 />
                 {errors.nombre && <span className="text-xs text-destructive">{errors.nombre.message}</span>}
@@ -332,7 +333,7 @@ export function ClientesPage({ isSubAdmin }) {
                 <input
                   disabled={isView}
                   {...register('vendor')}
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm disabled:opacity-70 disabled:bg-muted"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring lowercase"
                   placeholder="Nombre del representante"
                 />
               </div>
@@ -342,7 +343,7 @@ export function ClientesPage({ isSubAdmin }) {
                 <textarea maxLength='300'
                   disabled={isView}
                   {...register('informacion')}
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm disabled:opacity-70 disabled:bg-muted"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring lowercase"
                   placeholder="Detalles extra del equipo..."
                   rows={3}
                 />
