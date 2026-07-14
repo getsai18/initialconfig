@@ -10,7 +10,7 @@ export function usePrendas() {
     setLoading(true);
     try {
       const data = await PrendasService.getAll();
-      setPrendas(Array.isArray(data) ? data : []);
+      setPrendas(Array.isArray(data?.content) ? data.content : Array.isArray(data) ? data : []);
       setError(null);
     } catch (e) {
       setError(e);

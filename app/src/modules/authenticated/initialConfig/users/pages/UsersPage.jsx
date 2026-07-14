@@ -17,11 +17,12 @@ const estadoConfig = {
 }
 
 export function UsersPage({ isSubAdmin }) {
-  const { users: usuarios, createUser, updateUser, removeUser } = useUsers()
+  const {
+    users: usuarios, createUser, updateUser, removeUser,
+    page, setPage, search, setSearch, pageItems, totalElements, totalPages,
+  } = useUsers()
   const { areas } = useAreas()
 
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
@@ -66,17 +67,6 @@ export function UsersPage({ isSubAdmin }) {
     if (selectedRole === 'EMPLOYEE') return !normalized.includes('gestion de ordenes') && !normalized.includes('atencion a clientes');
     return true;
   });
-
-  const filtered = usuarios.filter(u =>
-    u.nombre.toLowerCase().includes(search.toLowerCase()) ||
-    (u.usuario && u.usuario.toLowerCase().includes(search.toLowerCase())) ||
-    (u.email && u.email.toLowerCase().includes(search.toLowerCase()))
-  )
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  useEffect(() => { setPage(1) }, [search])
 
   useEscapeToClose([
     [successModal, () => setSuccessModal(null)],
@@ -175,12 +165,12 @@ export function UsersPage({ isSubAdmin }) {
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {pageItems.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">No se encontraron usuarios</td>
               </tr>
             ) : (
-              paginated.slice().reverse().map((u, idx) => (
+              pageItems.map((u, idx) => (
                 <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 text-muted-foreground">{(page - 1) * PAGE_SIZE + idx + 1}</td>
                   <td className="px-4 py-3">
@@ -226,7 +216,7 @@ export function UsersPage({ isSubAdmin }) {
         </table>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPage={setPage} totalItems={filtered.length} pageSize={PAGE_SIZE} />
+      <Pagination page={page} totalPages={totalPages} onPage={setPage} totalItems={totalElements} pageSize={PAGE_SIZE} />
 
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setModalOpen(false)}>

@@ -30,7 +30,7 @@ export default function LogoutModal({ isOpen, onClose, onConfirm }) {
             Permanecer
           </button>
           <button
-            onClick={() => {
+         onClick={() => {
               onClose();
               onConfirm();
             }}
