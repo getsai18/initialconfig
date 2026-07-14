@@ -66,6 +66,7 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
                 .rol(rol)
                 .area(area)
                 .estado(normalizeEstado(request.getEstado(), true))
+                .fechaCreacion(java.time.LocalDateTime.now())
                 .build();
 
         UsuarioResponse response = toResponse(usuarioRepository.save(usuario));
