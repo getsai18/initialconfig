@@ -335,39 +335,46 @@ export default function DetallePedidoScreen({
       )}
 
       <div className="detalle-grid">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Pedido</div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-base font-bold text-gray-900">{p.id}</span>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${stCls}`}>{estadoTexto}</span>
+        {/* son dos filas, esta es la primera fila */}
+        <div className="flex flex-row gap-2 mb-3">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Pedido</div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-base font-bold text-gray-900">{p.id}</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${stCls}`}>{estadoTexto}</span>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Fecha de creación</div>
+            <div className="text-base font-semibold text-gray-900">{p.fecha}</div>
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Fecha de creación</div>
-          <div className="text-base font-semibold text-gray-900">{p.fecha}</div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Fecha límite</div>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={dateValue}
-              min={todayISO}
-              onChange={handleDateChange}
-              onBlur={handleDateBlur}
-              className={`flex-1 text-sm px-3 py-1.5 bg-white border rounded-lg outline-none focus:ring-2 text-gray-900 transition-colors ${dateError ? 'border-red-400 focus:border-red-500' : 'border-gray-200'}`}
-            />
-            {dateValue && !dateError && dateValue >= todayISO && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-50 text-green-700">Vigente</span>}
-            {vencido && !dateError && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700">Vencida</span>}
+        {/* esta es la segunda fila */}
+        <div className="flex flex-row gap-2 mb-3">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Fecha límite</div>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateValue}
+                min={todayISO}
+                onChange={handleDateChange}
+                onBlur={handleDateBlur}
+                className={`flex-1 text-sm px-3 py-1.5 bg-white border rounded-lg outline-none focus:ring-2 text-gray-900 transition-colors ${dateError ? 'border-red-400 focus:border-red-500' : 'border-gray-200'}`}
+              />
+              {dateValue && !dateError && dateValue >= todayISO && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-50 text-green-700">Vigente</span>}
+              {vencido && !dateError && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700">Vencida</span>}
+            </div>
+            {dateError && <div className="flex items-center gap-1.5 mt-1.5 text-xs text-red-600"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{dateError}</div>}
+            {dateTouched && !dateError && dateValue && <button onClick={handleDateSave} className="mt-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium font-semibold">Guardar fecha</button>}
           </div>
-          {dateError && <div className="flex items-center gap-1.5 mt-1.5 text-xs text-red-600"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{dateError}</div>}
-          {dateTouched && !dateError && dateValue && <button onClick={handleDateSave} className="mt-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium font-semibold">Guardar fecha</button>}
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Cliente / Órdenes</div>
+            <div className="text-sm font-semibold text-gray-900">{clienteActivo.nombre}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{p.ordenes.length} orden{p.ordenes.length !== 1 ? 'es' : ''} · {p.kits.length} kit{p.kits.length !== 1 ? 's' : ''}</div>
+          </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Cliente / Órdenes</div>
-          <div className="text-sm font-semibold text-gray-900">{clienteActivo.nombre}</div>
-          <div className="text-xs text-gray-400 mt-0.5">{p.ordenes.length} orden{p.ordenes.length !== 1 ? 'es' : ''} · {p.kits.length} kit{p.kits.length !== 1 ? 's' : ''}</div>
-        </div>
+        
       </div>
 
       <div className="flex justify-end mb-4">
