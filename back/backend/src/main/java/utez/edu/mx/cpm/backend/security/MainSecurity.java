@@ -58,7 +58,7 @@ public class MainSecurity {
                         .requestMatchers(HttpMethod.PUT, "/users/**", "/areas/**", "/activities/**", "/prendas/**")
                             .hasAnyRole("ADMIN", "SUB_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/areas/**", "/activities/**", "/prendas/**", "/clientes/**")
-                            .hasAnyRole("ADMIN", "SUB_ADMIN")
+                            .hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/clientes/**").hasAnyRole("ADMIN", "SUB_ADMIN", "MANAGEMENT")
                         .requestMatchers(HttpMethod.PUT, "/clientes/**").hasAnyRole("ADMIN", "SUB_ADMIN", "MANAGEMENT")
                         .anyRequest().authenticated()
