@@ -576,7 +576,6 @@ export default function OrderManager({ onLogout = null }) {
     window.scrollTo(0, 0);
   }
   function goSubstepNav(n) {
-    if (n > maxSubstep) return;
     goSubstep(n);
   }
 
@@ -820,6 +819,7 @@ export default function OrderManager({ onLogout = null }) {
       {onLogout && (
         <GestorSidebar
           screen={screen}
+          onGoTo={goTo}
           onLogout={() => setIsLogoutModalOpen(true)}
           incidenciasPendientes={incidenciasPendientes}
         />

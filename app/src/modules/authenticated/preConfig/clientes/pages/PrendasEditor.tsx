@@ -215,9 +215,14 @@ export default function PrendasEditor({ clothesData, onChange, tiposDisponibles,
           <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Género</label>
           <div className="tag-group">
             {['hombre', 'mujer', 'niño'].map(gen => (
-              <div key={gen} className={`tag-option${generoSeleccionado === gen ? ' selected' : ''}`} onClick={() => setGeneroSeleccionado(gen)}>
+              <button
+                key={gen}
+                type="button"
+                className={`tag-option${generoSeleccionado === gen ? ' selected' : ''}`}
+                onClick={() => setGeneroSeleccionado(gen)}
+              >
                 {gen.charAt(0).toUpperCase() + gen.slice(1)}
-              </div>
+              </button>
             ))}
           </div>
         </div>

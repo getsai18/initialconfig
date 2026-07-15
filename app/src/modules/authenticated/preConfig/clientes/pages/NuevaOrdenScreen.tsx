@@ -67,21 +67,21 @@ function StepBar({ substepActual, maxSubstep, onGoSubstepNav }: any) {
       {steps.map((s, idx) => {
         const isDone = s.n < substepActual;
         const isActive = s.n === substepActual;
-        const isVisited = s.n <= maxSubstep;
- const isVisitedOnly = isVisited && !isDone && !isActive;
-        const cls = `step${isActive ? ' active' : ''}${isDone ? ' done' : ''}${isVisitedOnly ? ' visited' : ''}${isVisited ? ' clickable' : ''}`;
-      return (
+        const isVisited = true; // All steps are clickable
+        const isVisitedOnly = isVisited && !isDone && !isActive;
+        const cls = `step${isActive ? ' active' : ''}${isDone ? ' done' : ''}${isVisitedOnly ? ' visited' : ''} clickable`;
+        return (
           <div key={s.n} style={{ display: 'contents' }}>
-            <div
+            <button
+              type="button"
               className={cls}
-              style={{ cursor: isVisited ? 'pointer' : 'default', opacity: isVisited ? 1 : 0.4 }}
-              onClick={() => isVisited && onGoSubstepNav(s.n)}
+              onClick={() => onGoSubstepNav(s.n)}
               title={s.label}
             >
               <div className="step-dot">{isDone ? '✓' : s.n}</div>
               {s.label}
-            </div>
- {idx < steps.length - 1 && <div className={`step-line${isDone ? ' step-line-filled' :''}`}></div>}
+            </button>
+            {idx < steps.length - 1 && <div className={`step-line${isDone ? ' step-line-filled' : ''}`}></div>}
           </div>
         );
       })}
@@ -135,7 +135,8 @@ function ActividadOpciones({ act, areaIdx, actIdx, onSelectTagOp, onToggleMulti,
 
         return (
           <div key={op} className="flex items-center gap-2 flex-wrap mt-1">
-            <div
+            <button
+              type="button"
               className={`tag-option ${multi ? 'multi' : ''} ${isSel ? 'selected' : ''}`}
               onClick={() => {
                 const valueToSave = isCustom ? savePrefix : op;
@@ -144,7 +145,7 @@ function ActividadOpciones({ act, areaIdx, actIdx, onSelectTagOp, onToggleMulti,
               }}
             >
               {displayOp}
-            </div>
+            </button>
             {isSel && isCustom && (
               <input
                 type="text"
@@ -1391,7 +1392,14 @@ function onToggleMulti(areaIdx: number, actIdx: number, option: string) {
                   <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Tipo de diseño</label>
                   <div className="tag-group">
                     {['Nuevo', 'Pasado', 'Ambos'].map(val => (
-                      <div key={val} className={`tag-option${tipoDiseno === val ? ' selected' : ''}`} onClick={() => setTipoDiseno(val)}>{val}</div>
+                      <button
+                        key={val}
+                        type="button"
+                        className={`tag-option${tipoDiseno === val ? ' selected' : ''}`}
+                        onClick={() => setTipoDiseno(val)}
+                      >
+                        {val}
+                      </button>
                     ))}
                   </div>
                 </div>

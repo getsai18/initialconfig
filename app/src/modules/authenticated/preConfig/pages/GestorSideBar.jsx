@@ -2,13 +2,13 @@ import { UserCircle, LogOut, ClipboardCheck, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/kernel/context/AuthContext';
 import { Link } from 'react-router-dom';
 
-export default function GestorSidebar({ screen, onLogout, incidenciasPendientes = 0 }) {
+export default function GestorSidebar({ screen, onGoTo, onLogout, incidenciasPendientes = 0 }) {
   const { user } = useAuth();
   const nombre = user?.nombre || 'Gestor';
   const email = user?.email || 'gestor@uniformespro.com';
   const inicial = nombre.charAt(0).toUpperCase();
 
-  const isActive = ['clientes', 'pedidos', 'detalle-pedido', 'reutilizar', 'nueva-orden'].includes(screen);
+  const isActive = ['clientes', 'Clientes', 'pedidos', 'detalle-pedido', 'reutilizar', 'nueva-orden'].includes(screen);
   const isConfirmacionesActive = screen === 'confirmaciones';
   const isIncidenciasActive = screen === 'incidencias';
 
@@ -24,6 +24,7 @@ export default function GestorSidebar({ screen, onLogout, incidenciasPendientes 
           <li>
             <Link
               to="/clientes"
+              onClick={() => onGoTo?.('clientes')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                 isActive
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground'
