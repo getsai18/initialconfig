@@ -11,7 +11,7 @@ export function SuccessModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-6 h-6 text-green-600" />
