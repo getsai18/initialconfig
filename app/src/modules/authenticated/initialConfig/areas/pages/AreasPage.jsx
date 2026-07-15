@@ -7,9 +7,12 @@ import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
 import { useAreas } from '../hooks/useAreas'
 import Loading from '@/kernel/components/Loading'
 
+import { useAuth } from '@/kernel/context/AuthContext'
+
 const PAGE_SIZE = 10
 
-export function AreasPage({ isSubAdmin }) {
+export function AreasPage() {
+  const { isSubAdmin } = useAuth()
   const {
     areas, createArea, updateArea, removeArea,
     page, setPage, search, setSearch, pageItems, totalElements, totalPages,
@@ -94,9 +97,7 @@ export function AreasPage({ isSubAdmin }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input type="text" placeholder="Buscar área..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
-        <button onClick={() => console.log('Texto')} className='flex items-center mr-auto px-4 py-2 rounded-lg bg-transparent border border-primary text-transparent-foreground hover:opacity-75 transition-opacity'>
-          <Search className="w-5 h-5" />
-        </button>
+
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
           <Plus className="w-4 h-4" /> Nueva Área
         </button>

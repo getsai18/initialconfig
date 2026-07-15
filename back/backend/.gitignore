@@ -1,0 +1,26 @@
+# Compilados y artefactos
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Configuración de IDEs
+.idea/
+*.iml
+.vscode/
+*.classpath
+*.project
+*.settings/
+
+# Logs y temporales
+*.log
+*.tmp
+*.bak
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Dependencias locales
+/.mvn/

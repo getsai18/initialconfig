@@ -1,32 +1,34 @@
-import { useState } from 'react'
+import { AuthProvider, useAuth } from '@/kernel/context/AuthContext'
 import { PublicRouter } from '@/routes/PublicRouter'
 import { AuthRouter } from '@/routes/AuthRouter'
 import { UnimplementedRoleScreen } from '@/routes/UnimplementedRoleScreen'
 
-const IMPLEMENTED_ROLES = ['ADMIN', 'SUB_ADMIN']
+const IMPLEMENTED_ROLES = ['ADMIN', 'SUB_ADMIN', 'MANAGEMENT']
 
-export default function App() {
-  const [role, setRole] = useState(() => {
-    return sessionStorage.getItem('role') || localStorage.getItem('role') || null;
-  });
+function AppContent() {
+  const { role, login, logout } = useAuth()
 
-  function handleLogin(newRole) {
-    setRole(newRole)
+  if (role === null) {
+    return (
+      <PublicRouter
+        onLogin={(newRole, newName, rawUser, token, recordarme) => {
+          login(token, recordarme)
+        }}
+      />
+    )
   }
-
-  function handleLogout() {
-    sessionStorage.removeItem('token')
-    sessionStorage.removeItem('role')
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    setRole(null)
-  }
-
-  if (role === null) return <PublicRouter onLogin={handleLogin} />
 
   if (!IMPLEMENTED_ROLES.includes(role)) {
-    return <UnimplementedRoleScreen role={role} onLogout={handleLogout} />
+    return <UnimplementedRoleScreen role={role} onLogout={logout} />
   }
 
-  return <AuthRouter onLogout={handleLogout} isSubAdmin={role === 'SUB_ADMIN'} />
+  return <AuthRouter onLogout={logout} />
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Trash2, Search, X, Circle, Square, AlignLeft, Tag, ChevronDown, Eye } from 'lucide-react'
+import { useAuth } from '@/kernel/context/AuthContext'
 import { Pagination } from '@/kernel/components/Pagination'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { useEscapeToClose } from '@/kernel/hooks/useEscapeToClose'
@@ -324,7 +325,8 @@ function ActividadBuilder({ initial, onSave, onCancel, isEdit, isView, actividad
   )
 }
 
-export function ActivitiesPage({ isSubAdmin }) {
+export function ActivitiesPage() {
+  const { isSubAdmin } = useAuth()
   const {
     activities: actividades, createActivity, updateActivity, removeActivity,
     page, setPage, search, setSearch, pageItems, totalElements, totalPages,
@@ -399,9 +401,7 @@ export function ActivitiesPage({ isSubAdmin }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input type="text" placeholder="Buscar actividad o etiqueta..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
-        <button onClick={() => console.log('Texto')} className='flex items-center mr-auto px-4 py-2 rounded-lg bg-transparent border border-primary text-transparent-foreground hover:opacity-75 transition-opacity'>
-          <Search className="w-5 h-5" />
-        </button>
+
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
           <Plus className="w-4 h-4" /> Nueva Actividad
         </button>

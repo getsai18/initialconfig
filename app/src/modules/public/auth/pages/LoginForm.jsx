@@ -26,12 +26,7 @@ export function LoginForm({ onLogin, onForgotPassword }) {
         return
       }
 
-      // Guardar sesión según la opción "Recordarme"
-      const storage = data.recordarme ? localStorage : sessionStorage
-      storage.setItem('token', result.token)
-      storage.setItem('role', result.usuario?.role || '')
-
-      onLogin?.(result.usuario?.role, result.usuario?.nombre)
+      onLogin?.(result.usuario?.role, result.usuario?.nombre, result.usuario, result.token, data.recordarme)
     } catch (error) {
       console.error(error)
       setLoginError(GENERIC_ERROR)
