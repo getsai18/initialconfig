@@ -25,9 +25,12 @@ function AppContent() {
   return <AuthRouter onLogout={logout} />
 }
 
+import { Toaster } from 'react-hot-toast'
+
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="bottom-right" reverseOrder={false} />
       <AppContent />
     </AuthProvider>
   )

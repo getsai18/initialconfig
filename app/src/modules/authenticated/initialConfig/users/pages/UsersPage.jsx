@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, Search, MonitorSmartphone } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
 import { Pagination } from '@/kernel/components/Pagination'
 import { SuccessModal } from '@/kernel/components/SuccessModal'
 import { normalizeText } from '@/kernel/utils/normalizeText'
@@ -38,10 +39,6 @@ export function UsersPage() {
   // Estados de éxito
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
-
-  // Estados de carga de peticiones
-  const [isSaving, setIsSaving] = useState(false)
-  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   // Agregamos 'setValue' para poder modificar el areaId dinámicamente desde el useEffect
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm()
@@ -108,46 +105,54 @@ export function UsersPage() {
     setModalOpen(true)
   }
 
-  async function onSubmit(data) {
-    // Permitimos que guarde el areaId asignado para cualquier rol (MANAGEMENT, ATTENDANCE o EMPLOYEE)
+  function onSubmit(data) {
     const areaId = data.areaId !== '' ? Number(data.areaId) : null
+    setModalOpen(false)
 
-    setSavingMessage(editTarget ? 'Actualizando usuario...' : 'Creando usuario...')
-    setIsSaving(true)
-    try {
-      if (editTarget) {
-        await updateUser(editTarget.id, { ...data, areaId })
-        setModalOpen(false)
-        setEditSuccessModal(data)
-      } else {
-        const nuevo = await createUser({ ...data, areaId })
-        setSuccessModal(nuevo)
-        setModalOpen(false)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
+    if (editTarget) {
+      toast.promise(
+        updateUser(editTarget.id, { ...data, areaId }),
+        {
+          loading: 'Actualizando usuario...',
+          success: () => {
+            setEditSuccessModal(data)
+            return 'Usuario actualizado'
+          },
+          error: 'Error al actualizar usuario'
+        }
+      )
+    } else {
+      toast.promise(
+        createUser({ ...data, areaId }),
+        {
+          loading: 'Creando usuario...',
+          success: (nuevo) => {
+            setSuccessModal(nuevo)
+            return 'Usuario creado'
+          },
+          error: 'Error al crear usuario'
+        }
+      )
     }
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!deleteModal) return
-    setSavingMessage('Eliminando usuario...')
-    setIsSaving(true)
-    try {
-      await removeUser(deleteModal.id)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
-      setDeleteModal(null)
-    }
+    const id = deleteModal.id
+    setDeleteModal(null)
+
+    toast.promise(
+      removeUser(id),
+      {
+        loading: 'Eliminando usuario...',
+        success: 'Usuario eliminado',
+        error: 'Error al eliminar usuario'
+      }
+    )
   }
 
   return (
     <div className="p-8 relative">
-      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className="font-bold">Usuarios</h1>
       </div>

@@ -61,7 +61,7 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
         }
 
         Usuario usuario = Usuario.builder()
-                .usuario(normalizeRequired(request.getUsuario(), "El usuario es requerido."))
+                .usuario(normalizeRequired(request.getUsuario(), "El usuario es requerido.").toLowerCase())
                 .nombre(normalizeRequired(request.getNombre(), "El nombre es requerido."))
                 .email(normalizeRequired(request.getEmail(), "El email es requerido."))
                 .password(encodePassword(rawPassword.trim()))
@@ -89,7 +89,7 @@ public class UsuarioServiceImpl implements utez.edu.mx.cpm.backend.modules.auth.
         Usuario usuario = findEntity(id);
         validateUnique(request, id);
 
-        usuario.setUsuario(normalizeRequired(request.getUsuario(), "El usuario es requerido."));
+        usuario.setUsuario(normalizeRequired(request.getUsuario(), "El usuario es requerido.").toLowerCase());
         usuario.setNombre(normalizeRequired(request.getNombre(), "El nombre es requerido."));
         usuario.setEmail(normalizeRequired(request.getEmail(), "El email es requerido."));
         if (request.getPassword() != null && !request.getPassword().isBlank()) {

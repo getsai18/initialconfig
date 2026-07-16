@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { Plus, Pencil, Trash2, Search, Building2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Pagination } from '@/kernel/components/Pagination'
@@ -26,10 +27,6 @@ export function AreasPage() {
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
 
-  // Estados de carga de peticiones
-  const [isSaving, setIsSaving] = useState(false)
-  const [savingMessage, setSavingMessage] = useState('Guardando...')
-
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
   useEscapeToClose([
@@ -51,43 +48,53 @@ export function AreasPage() {
     setModalOpen(true)
   }
 
-  async function onSubmit(data) {
-    setSavingMessage(editTarget ? 'Actualizando área...' : 'Creando área...')
-    setIsSaving(true)
-    try {
-      if (editTarget) {
-        await updateArea(editTarget.id, { nombre: data.nombre, descripcion: data.descripcion, estado: data.estado })
-        setModalOpen(false)
-        setEditSuccessModal(data)
-      } else {
-        const nueva = await createArea({ nombre: data.nombre, descripcion: data.descripcion })
-        setSuccessModal(nueva)
-        setModalOpen(false)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
+  function onSubmit(data) {
+    setModalOpen(false)
+
+    if (editTarget) {
+      toast.promise(
+        updateArea(editTarget.id, { nombre: data.nombre, descripcion: data.descripcion, estado: data.estado }),
+        {
+          loading: 'Actualizando área...',
+          success: () => {
+            setEditSuccessModal(data)
+            return 'Área actualizada'
+          },
+          error: 'Error al actualizar área'
+        }
+      )
+    } else {
+      toast.promise(
+        createArea({ nombre: data.nombre, descripcion: data.descripcion }),
+        {
+          loading: 'Creando área...',
+          success: (nueva) => {
+            setSuccessModal(nueva)
+            return 'Área creada'
+          },
+          error: 'Error al crear área'
+        }
+      )
     }
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!deleteModal) return
-    setSavingMessage('Eliminando área...')
-    setIsSaving(true)
-    try {
-      await removeArea(deleteModal.id)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
-      setDeleteModal(null)
-    }
+    const id = deleteModal.id
+    setDeleteModal(null)
+
+    toast.promise(
+      removeArea(id),
+      {
+        loading: 'Eliminando área...',
+        success: 'Área eliminada',
+        error: 'Error al eliminar área'
+      }
+    )
   }
 
   return (
     <div className="p-8 relative">
-      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className ="font-bold">Áreas</h1>
       </div>

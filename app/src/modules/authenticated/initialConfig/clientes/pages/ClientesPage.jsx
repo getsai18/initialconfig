@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import toast from 'react-hot-toast'
 import { Plus, Pencil, Trash2, Search, Users, UserCircle, X, ClipboardList, Package, ChevronDown, ChevronUp } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Pagination } from '@/kernel/components/Pagination'
@@ -37,10 +38,6 @@ export function ClientesPage() {
 
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
-
-  // Estados de carga de peticiones
-  const [isSaving, setIsSaving] = useState(false)
-  const [savingMessage, setSavingMessage] = useState('Guardando...')
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({ defaultValues: { tipo: 'individual' } })
 
@@ -94,45 +91,54 @@ export function ClientesPage() {
     setModalOpen(true)
   }
 
-  async function onSubmit(data) {
+  function onSubmit(data) {
     if (isView) return
+    setModalOpen(false)
 
-    setSavingMessage(editTarget ? 'Actualizando cliente...' : 'Creando cliente...')
-    setIsSaving(true)
-    try {
-      if (editTarget) {
-        await updateCliente(editTarget.id, { nombre: data.nombre, vendor: data.vendor, informacion: data.informacion })
-        setModalOpen(false)
-        setEditSuccessModal(data)
-      } else {
-        const nuevo = await createCliente({ nombre: data.nombre, vendor: data.vendor, informacion: data.informacion })
-        setSuccessModal(nuevo)
-        setModalOpen(false)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
+    if (editTarget) {
+      toast.promise(
+        updateCliente(editTarget.id, { nombre: data.nombre, vendor: data.vendor, informacion: data.informacion }),
+        {
+          loading: 'Actualizando cliente...',
+          success: () => {
+            setEditSuccessModal(data)
+            return 'Cliente actualizado'
+          },
+          error: 'Error al actualizar cliente'
+        }
+      )
+    } else {
+      toast.promise(
+        createCliente({ nombre: data.nombre, vendor: data.vendor, informacion: data.informacion }),
+        {
+          loading: 'Creando cliente...',
+          success: (nuevo) => {
+            setSuccessModal(nuevo)
+            return 'Cliente creado'
+          },
+          error: 'Error al crear cliente'
+        }
+      )
     }
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!deleteModal) return
-    setSavingMessage('Eliminando cliente...')
-    setIsSaving(true)
-    try {
-      await removeCliente(deleteModal.id)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
-      setDeleteModal(null)
-    }
+    const id = deleteModal.id
+    setDeleteModal(null)
+
+    toast.promise(
+      removeCliente(id),
+      {
+        loading: 'Eliminando cliente...',
+        success: 'Cliente eliminado',
+        error: 'Error al eliminar cliente'
+      }
+    )
   }
 
   return (
     <div className="p-8 relative">
-      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-6">
         <h1 className ="font-bold">Clientes</h1>
       </div>

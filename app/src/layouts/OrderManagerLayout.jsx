@@ -18,8 +18,10 @@ import {
   LS_KEY, LS_KEY_OIDS,
 } from '../modules/authenticated/preConfig/data/catalogos';
 import { deleteDoc, getDoc, setDoc } from '../modules/authenticated/preConfig/app/storage';
-import { db } from '../modules/authenticated/preConfig/app/db'; 
-import GestorSidebar from '../modules/authenticated/preConfig/pages/GestorSideBar';
+import { db } from '../modules/authenticated/preConfig/app/db';
+import { Sidebar } from './Sidebar';
+import { UserCircle, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/kernel/context/AuthContext';
 import { ConfirmacionesMaterial } from '../modules/authenticated/initialConfig/materialCheck/pages/ConfirmacionesMaterial';
 import {
   pedidoVencido, tipoSolicitudLimpio,
@@ -27,6 +29,7 @@ import {
 } from '../modules/authenticated/preConfig/utils/helpers';
 
 export default function OrderManager({ onLogout = null }) {
+  const { user } = useAuth();
   // ─── Data ───────────────────────────────────────────────
   const [clientes, setClientes] = useState([]);
   const [dbLoading, setDbLoading] = useState(true);
@@ -80,7 +83,7 @@ export default function OrderManager({ onLogout = null }) {
       if (saved && Array.isArray(saved)) setIncidencias(saved);
     }).catch(console.warn);
   }, []);
-  
+
   const clientesRef = useRef([]);
   useEffect(() => { clientesRef.current = clientes; }, [clientes]);
 
@@ -233,7 +236,7 @@ export default function OrderManager({ onLogout = null }) {
       console.warn('Error al registrar cliente', e);
     }
   }
-  
+
   // ─── SCREEN: PEDIDOS ────────────────────────────────────
   function crearPedidoNuevo(forClienteId) {
     const cid = forClienteId || clienteActivoId;
@@ -352,7 +355,7 @@ export default function OrderManager({ onLogout = null }) {
     });
     event.target.value = '';
   }
-  
+
   function quitarAdjunto(idx, scope) {
     if (scope === 'pedido' || scope === 'pedido-readonly') {
       updatePedido(clienteActivoId, pedidoActivoId, p => ({ ...p, adjuntos: p.adjuntos.filter((_, i) => i !== idx) }));
@@ -382,7 +385,7 @@ export default function OrderManager({ onLogout = null }) {
         const hoy = new Date();
         const fStr = hoy.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
         updatePedido(clienteActivoId, pedidoActivoId, p => ({
-           ...p, kits: [...p.kits, { id: 'KIT-' + Date.now(), nombre, fecha: fStr, ordenIds: [], status: p.confirmado ? 'En producción' : undefined }],
+          ...p, kits: [...p.kits, { id: 'KIT-' + Date.now(), nombre, fecha: fStr, ordenIds: [], status: p.confirmado ? 'En producción' : undefined }],
         }));
       },
     });
@@ -437,7 +440,7 @@ export default function OrderManager({ onLogout = null }) {
     updatePedido(clienteActivoId, pedidoActivoId, p => ({
       ...p,
       kits: p.kits.map((k) => {
-         if (k.id === kitId) {
+        if (k.id === kitId) {
           const newIds = [...k.ordenIds];
           selectedOrdenIds.forEach((id) => { if (!newIds.includes(id)) newIds.push(id); });
           return { ...k, ordenIds: newIds };
@@ -454,7 +457,7 @@ export default function OrderManager({ onLogout = null }) {
       const areasGuardadas = await getDoc('cp_areas', []);
       if (areasGuardadas && areasGuardadas.length > 0) {
         return areasGuardadas
-         .filter(area => area.nombre !== 'Gestión de Ordenes' && area.nombre !== 'Atención a Clientes' && area.estado !== 'inactiva')
+          .filter(area => area.nombre !== 'Gestión de Ordenes' && area.nombre !== 'Atención a Clientes' && area.estado !== 'inactiva')
           .map(area => ({ id: area.id, nombre: area.nombre, color: area.color || '#6b7280', activa: false, actividades: [] }));
       }
     } catch (error) {
@@ -472,7 +475,7 @@ export default function OrderManager({ onLogout = null }) {
     }
     return defaultActividades;
   }
-  
+
   async function iniciarNuevaOrden() {
     const p = pedidoActivo;
     if (p && pedidoVencido(p)) {
@@ -535,14 +538,14 @@ export default function OrderManager({ onLogout = null }) {
     } else {
       setAdjuntosData(p ? [...(p.adjuntos || [])] : []);
     }
-   
+
     if (reutilizar && orden?.config?.areas?.length) {
       setAreasActivas(areasBase.map((a) => {
         const savedArea = orden.config.areas.find((sa) => sa.area === a.nombre);
         if (savedArea) {
           const actividades = savedArea.actividades.map((sa) => {
-             const def = (actividadesCatalog || []).find((c) => c.nombre === sa.actividad) || getCatalogoActividad(sa.actividad);
-             if (!def) return null;
+            const def = (actividadesCatalog || []).find((c) => c.nombre === sa.actividad) || getCatalogoActividad(sa.actividad);
+            if (!def) return null;
             return { ...JSON.parse(JSON.stringify(def)), selectedOptions: sa.tags?.map((t) => t.opcion) || [] };
           }).filter(Boolean);
           return { ...a, activa: true, actividades };
@@ -817,11 +820,20 @@ export default function OrderManager({ onLogout = null }) {
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900 font-sans">
       {onLogout && (
-        <GestorSidebar
-          screen={screen}
-          onGoTo={goTo}
+        <Sidebar
+          title="Gestión de Órdenes"
+          subtitle="Sistema de Gestión"
+          menuItems={[
+            { id: 'clientes', label: 'Clientes', icon: UserCircle, path: '/clientes' },
+            { id: 'confirmaciones', label: 'Confirmaciones', icon: ClipboardCheck, path: '/confirmaciones' },
+            { id: 'incidencias', label: 'Incidencias', icon: AlertTriangle, path: '/incidencias', badge: incidenciasPendientes }
+          ]}
+          user={{
+            initials: user?.nombre?.charAt(0).toUpperCase() || 'G',
+            name: user?.email || 'gestor@uniformespro.com',
+            role: user?.nombre || 'Gestor'
+          }}
           onLogout={() => setIsLogoutModalOpen(true)}
-          incidenciasPendientes={incidenciasPendientes}
         />
       )}
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import toast from 'react-hot-toast'
 import { Plus, Pencil, Trash2, Search, X, Circle, Square, AlignLeft, Tag, ChevronDown, Eye } from 'lucide-react'
 import { useAuth } from '@/kernel/context/AuthContext'
 import { Pagination } from '@/kernel/components/Pagination'
@@ -340,10 +341,6 @@ export function ActivitiesPage() {
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
 
-  // Estados de carga de peticiones
-  const [isSaving, setIsSaving] = useState(false)
-  const [savingMessage, setSavingMessage] = useState('Guardando...')
-
   useEscapeToClose([
     [successModal, () => setSuccessModal(null)],
     [editSuccessModal, () => setEditSuccessModal(null)],
@@ -355,43 +352,53 @@ export function ActivitiesPage() {
   function openEdit(a) { setEditTarget(a); setIsViewMode(false); setBuilderOpen(true) }
   function openView(a) { setEditTarget(a); setIsViewMode(true); setBuilderOpen(true) }
 
-  async function handleSave(data) {
-    setSavingMessage(editTarget ? 'Actualizando actividad...' : 'Creando actividad...')
-    setIsSaving(true)
-    try {
-      if (editTarget) {
-        await updateActivity(editTarget.id, data)
-        setBuilderOpen(false)
-        setEditSuccessModal(data)
-      } else {
-        const nueva = await createActivity(data)
-        setSuccessModal(nueva)
-        setBuilderOpen(false)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
+  function handleSave(data) {
+    setBuilderOpen(false)
+
+    if (editTarget) {
+      toast.promise(
+        updateActivity(editTarget.id, data),
+        {
+          loading: 'Actualizando actividad...',
+          success: () => {
+            setEditSuccessModal(data)
+            return 'Actividad actualizada'
+          },
+          error: 'Error al actualizar actividad'
+        }
+      )
+    } else {
+      toast.promise(
+        createActivity(data),
+        {
+          loading: 'Creando actividad...',
+          success: (nueva) => {
+            setSuccessModal(nueva)
+            return 'Actividad creada'
+          },
+          error: 'Error al crear actividad'
+        }
+      )
     }
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!deleteModal) return
-    setSavingMessage('Eliminando actividad...')
-    setIsSaving(true)
-    try {
-      await removeActivity(deleteModal.id)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
-      setDeleteModal(null)
-    }
+    const id = deleteModal.id
+    setDeleteModal(null)
+
+    toast.promise(
+      removeActivity(id),
+      {
+        loading: 'Eliminando actividad...',
+        success: 'Actividad eliminada',
+        error: 'Error al eliminar actividad'
+      }
+    )
   }
 
   return (
     <div className="p-8 relative">
-      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className ="font-bold">Actividades</h1>
       </div>

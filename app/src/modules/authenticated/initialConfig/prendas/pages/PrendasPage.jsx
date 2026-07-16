@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { Plus, Pencil, Trash2, Search, Shirt, Package, GraduationCap, Footprints } from 'lucide-react'
 // TODO: reemplazar por íconos reales de "pants"/"cap" (no se copiaron los SVG originales del proyecto migrado)
 const Pants = Footprints
@@ -39,10 +40,6 @@ export function PrendasPage() {
   const [successModal, setSuccessModal] = useState(null)
   const [editSuccessModal, setEditSuccessModal] = useState(null)
 
-  // Estados de carga de peticiones
-  const [isSaving, setIsSaving] = useState(false)
-  const [savingMessage, setSavingMessage] = useState('Guardando...')
-
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({ defaultValues: { nombre: '', icono: 'superiores' } })
 
   useEscapeToClose([
@@ -60,43 +57,53 @@ export function PrendasPage() {
   function openCreate() { setEditTarget(null); reset({ nombre: '', icono: 'superiores' }); setModalOpen(true) }
   function openEdit(p) { setEditTarget(p); reset({ nombre: p.nombre, icono: p.icono }); setModalOpen(true) }
 
-  async function onSubmit(data) {
-    setSavingMessage(editTarget ? 'Actualizando prenda...' : 'Creando prenda...')
-    setIsSaving(true)
-    try {
-      if (editTarget) {
-        await updatePrenda(editTarget.id, data)
-        setModalOpen(false)
-        setEditSuccessModal(data)
-      } else {
-        const nueva = await createPrenda(data)
-        setSuccessModal(nueva)
-        setModalOpen(false)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
+  function onSubmit(data) {
+    setModalOpen(false)
+
+    if (editTarget) {
+      toast.promise(
+        updatePrenda(editTarget.id, data),
+        {
+          loading: 'Actualizando prenda...',
+          success: () => {
+            setEditSuccessModal(data)
+            return 'Prenda actualizada'
+          },
+          error: 'Error al actualizar prenda'
+        }
+      )
+    } else {
+      toast.promise(
+        createPrenda(data),
+        {
+          loading: 'Creando prenda...',
+          success: (nueva) => {
+            setSuccessModal(nueva)
+            return 'Prenda creada'
+          },
+          error: 'Error al crear prenda'
+        }
+      )
     }
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!deleteModal) return
-    setSavingMessage('Eliminando prenda...')
-    setIsSaving(true)
-    try {
-      await removePrenda(deleteModal.id)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSaving(false)
-      setDeleteModal(null)
-    }
+    const id = deleteModal.id
+    setDeleteModal(null)
+
+    toast.promise(
+      removePrenda(id),
+      {
+        loading: 'Eliminando prenda...',
+        success: 'Prenda eliminada',
+        error: 'Error al eliminar prenda'
+      }
+    )
   }
 
   return (
     <div className="p-8 relative">
-      {isSaving && <Loading overlay message={savingMessage} />}
       <div className="mb-8">
         <h1 className ="font-bold">Tipos de Prendas</h1>
       </div>
