@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de versiones</title>
+</head>
+<body>
+    <main>
+        <section id="changelog" style="width: 45%;">
+
+        </section>
+        <section style="width: 55%; justify-content: center; align-items: center;">
+            <img src="/Logo-utez.png" width="594" height="300" alt="">
+        </section>
+    </main>
+</body>
+<script>
+    (async () => {
+        await fetch('/changelog.json').then(response => response.json())
+            .then(result => {
+                let content = '<h2 style="margin-top: 0px;">Control de versiones:</h2>';
+                let reversed = [...result].reverse();
+                reversed.forEach(log => {
+                    let aux = '';
+                    log.notes.forEach(note => aux += `<li><p>${note}</p></li>`);
+
+                    content += `<div id="log">
+                                    <div id="pipe"></div>
+                                    <div id="circle"></div>
+                                    <div id="card">
+                                        <p style="margin-bottom: 20px; margin-top: 8px;">
+                                            <span class="tag">v${log.version}</span>
+                                            <span class="date">Actualizado el: ${log.date}</span>
+                                        </p>
+                                        <ul style="padding-left: 16px;">
+                                            ${aux}
+                                        </ul>
+                                    </div>
+                                </div>`;
+                });
+
+                document.getElementById('changelog').innerHTML = content;
+            }).catch(console.log);
+    })();
+</script>
+<style>
+    * { font-family: Arial, Helvetica, sans-serif; }
+    p {
+        margin: 0px;
+        margin-bottom: 12px;
+    }
+    ul { margin: 0px; }
+    html, body { overflow: hidden; margin: 0 }
+    main {
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+    }
+    section {
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: flex;
+        padding: 30px;
+    }
+    #log {
+        display: flex;
+        position: relative;
+        width: 100%;
+    }
+    #circle {
+        position: absolute;
+        top: 49.5px;
+        left: 8.7px;
+        display: block;
+        width: 25px;
+        height: 25px;
+        background-color: #fff;
+        border: 2px solid;
+        border-color: #b9b9b9;
+        border-radius: 50%;
+        box-sizing: border-box;
+    }
+    #pipe {
+        display: block;
+        margin-left: 20px;
+        margin-right: 35px;
+        width: 2px;
+        height: 100%;
+        background-color: #b9b9b9;
+    }
+    #card {
+        margin-top: 30px;
+        padding: 16px;
+        border-radius: 20px;
+        width: 100%;
+        box-shadow: 0px 8px 10px 5px rgba(0, 0, 0, 0.1);
+    }
+    .tag {
+        background-color: #171618;
+        color: #fff;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        padding-left: 16px;
+        padding-right: 16px;
+        margin-right: 8px;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+    .date {
+        color: #b4b4b4;
+    }
+    #log:last-child > #pipe {
+        height: 49px;
+    }
+
+</style>
+</html>
